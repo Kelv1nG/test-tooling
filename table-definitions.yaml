@@ -1,0 +1,9 @@
+file_transfer:
+  sheet: File Transfers
+  src_column: Source Path
+  dst_column: Destination Path
+
+file_check:
+  sheet: File Checks
+  new_file_column: New File
+  old_file_column: Old File
