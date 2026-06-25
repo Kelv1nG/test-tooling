@@ -1,71 +1,38 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	authDB "game-night/auth/db"
-	authSqlc "game-night/auth/db/sqlc"
-	authService "game-night/auth/services"
+	"errors"
+	"flag"
 	"log"
-	"net"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 )
 
 func main() {
-	ctx := context.Background()
-	if err := run(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
-	}
-}
+	addr := flag.String("addr", ":8080", "HTTP listen address")
+	definitionsPath := flag.String("definitions", "table-definitions.yaml", "path to table definitions YAML")
+	workbookPath := flag.String("workbook", "configuration-example.xlsx", "path to workbook")
+	flag.Parse()
 
-func run(ctx context.Context) error {
-	config, err := LoadConfig()
-	if err != nil {
-		return err
-	}
+	app := mustNewApplication(
+		*addr,
+		*definitionsPath,
+		*workbookPath,
+		log.New(os.Stdout, "", log.LstdFlags),
+	)
 
-	db, err := NewDBConnPool(ctx, config.DBSource)
-	if err != nil {
-		return err
-	}
-
-	// instantiate related queries and store
-	authQueries := authSqlc.New(db)
-	authStore := authDB.NewAuthStore(authQueries)
-	authService := authService.NewAuthService(authStore)
-
-	logger := NewAppLogger()
-	srv := NewServer(logger, authService)
-
-	httpServer := http.Server{
-		Addr:    net.JoinHostPort(config.Host, config.Port),
-		Handler: srv,
+	server := &http.Server{
+		Addr:              *addr,
+		Handler:           app.routes(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
-	go func() {
-		log.Printf("listening on %s\n", httpServer.Addr)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Fprintf(os.Stderr, "error listening and serving :%s\n", err)
-		}
-	}()
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		shutdownCtx := context.Background()
-		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10*time.Second)
-		defer cancel()
-		if err := httpServer.Shutdown(shutdownCtx); err != nil {
-			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
-		}
-	}()
-
-	wg.Wait()
-	return nil
+	app.logger.Printf("listening on http://localhost%s\n", *addr)
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		app.logger.Fatalf("server failed: %v", err)
+	}
 }

@@ -1,0 +1,48 @@
+package main
+
+templ ConfigurationTab(data pageData) {
+	<section
+		x-cloak
+		x-show="activeTab === 'configuration'"
+		data-tab-panel="configuration"
+		class="rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8"
+	>
+		<div class="mb-4">
+			<h2 class="text-xl font-semibold text-slate-900">Load configuration</h2>
+			<p class="mt-1 text-sm text-slate-600">Use repo-local paths or absolute paths for both files.</p>
+		</div>
+
+		if data.LoadError != "" {
+			<div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{ data.LoadError }</div>
+		}
+
+		<form
+			method="post"
+			action="/load"
+			hx-post="/load"
+			hx-target="#app-shell"
+			hx-swap="outerHTML"
+			hx-disabled-elt="button[type='submit']"
+			class="grid gap-4 lg:grid-cols-2"
+		>
+			<input type="hidden" name="activeTab" x-bind:value="activeTab"/>
+			<label class="block">
+				<span class="mb-2 block text-sm font-medium text-slate-700">Definitions file</span>
+				<input name="definitionsPath" value={ data.DefinitionsPath } required class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
+			</label>
+			<label class="block">
+				<span class="mb-2 block text-sm font-medium text-slate-700">Workbook file</span>
+				<input name="workbookPath" value={ data.WorkbookPath } required class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
+			</label>
+			<div class="lg:col-span-2 flex flex-wrap gap-3">
+				<button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Load workbook</button>
+				<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Loading workbook...</div>
+				if data.HasConfig {
+					<div class="inline-flex items-center rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+						Workbook parsed successfully with { data.TransferCount } transfer row(s) and { data.CheckCount } check row(s).
+					</div>
+				}
+			</div>
+		</form>
+	</section>
+}

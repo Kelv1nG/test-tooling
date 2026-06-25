@@ -96,6 +96,7 @@ func (d FileTransferTableDefinition) read(
 		}
 
 		mappings = append(mappings, FileTransferMap{
+			ExcelRow: excelRow,
 			Src:  src,
 			Dest: dst,
 		})

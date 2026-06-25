@@ -1,0 +1,66 @@
+package main
+
+templ Page(data pageData) {
+	<!doctype html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>File Transfer Loader</title>
+			@HeadAssets()
+		</head>
+		<body class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(180,83,9,0.14),transparent_26%),linear-gradient(180deg,#fcfaf5_0%,#f6f1e8_100%)] text-ink">
+			<main class="min-h-screen p-3 sm:p-4">
+				@AppShell(data)
+			</main>
+			@PageScripts()
+		</body>
+	</html>
+}
+
+templ AppShell(data pageData) {
+	<div id="app-shell" x-data={ appShellExpression(data.ActiveTab) } class="min-h-screen">
+		@TabButtons()
+		@ConfigurationTab(data)
+		@FileTransferTab(data)
+		@CheckingTab(data)
+	</div>
+}
+
+templ HeadAssets() {
+	<style>
+	  [x-cloak] { display: none !important; }
+	  .htmx-indicator { display: none; }
+	  .htmx-request .htmx-indicator,
+	  .htmx-request.htmx-indicator {
+	    display: flex;
+	  }
+	</style>
+	<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+	<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+	  tailwind.config = {
+	    theme: {
+	      extend: {
+	        colors: {
+	          ink: "#1f2937",
+	          pine: "#0f766e",
+	          ember: "#b45309"
+	        },
+	        boxShadow: {
+	          float: "0 24px 60px rgba(15, 23, 42, 0.10)"
+	        }
+	      }
+	    }
+	  }
+	</script>
+}
+
+templ PageScripts() {
+	<script>
+	  window.appShell = (initialTab) => ({
+	    activeTab: initialTab || "configuration"
+	  });
+	</script>
+}

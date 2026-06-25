@@ -96,6 +96,7 @@ func (d FileCheckTableDefinition) read(
 		}
 
 		rules = append(rules, FileCheckRule{
+			ExcelRow: excelRow,
 			NewFile: newFile,
 			OldFile: oldFile,
 		})

@@ -1,0 +1,226 @@
+package main
+
+templ FileTransferTab(data pageData) {
+	<section
+		x-cloak
+		x-show="activeTab === 'file-transfer'"
+		x-data={ strategyStateExpression(data.Strategy) }
+		data-tab-panel="file-transfer"
+		class="rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8"
+	>
+		if data.HasConfig {
+			<div class="space-y-6">
+				<div class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+					@TransferControlsCard(data)
+					@TransferSummaryCard(data)
+				</div>
+				@TransferTableCard(data)
+			</div>
+		} else {
+			<div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+				<h2 class="text-xl font-semibold text-slate-900">File transfer is waiting on configuration</h2>
+				<p class="mt-2 text-sm text-slate-600">Load the workbook in the configuration tab first, then come back here to choose strategy and run transfers.</p>
+			</div>
+		}
+	</section>
+}
+
+templ TransferControlsCard(data pageData) {
+	<div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+		<div class="mb-4">
+			<h2 class="text-xl font-semibold text-slate-900">Run transfer</h2>
+			<p class="mt-1 text-sm text-slate-600">Pick the destination strategy first, then run the workbook mappings.</p>
+		</div>
+
+		<form
+			method="post"
+			action="/transfer"
+			hx-post="/transfer"
+			hx-target="#app-shell"
+			hx-swap="outerHTML"
+			hx-disabled-elt="button[type='submit']"
+			class="grid gap-4"
+		>
+			<input type="hidden" name="definitionsPath" value={ data.DefinitionsPath }/>
+			<input type="hidden" name="workbookPath" value={ data.WorkbookPath }/>
+			<input type="hidden" name="activeTab" x-bind:value="activeTab"/>
+
+			<div class="grid gap-3 lg:grid-cols-2">
+				<label class="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-teal-300">
+					<div class="flex items-start gap-3">
+						<input x-model="strategy" type="radio" name="strategy" value="overwrite" checked?={ data.Strategy == "overwrite" } class="mt-1 h-4 w-4 border-slate-300 text-pine focus:ring-pine"/>
+						<div>
+							<div class="text-sm font-semibold text-slate-900">Overwrite existing files</div>
+							<div class="mt-1 text-sm text-slate-600">Replace an existing destination with the source file.</div>
+						</div>
+					</div>
+				</label>
+
+				<label class="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-teal-300">
+					<div class="flex items-start gap-3">
+						<input x-model="strategy" type="radio" name="strategy" value="skip" checked?={ data.Strategy == "skip" } class="mt-1 h-4 w-4 border-slate-300 text-pine focus:ring-pine"/>
+						<div>
+							<div class="text-sm font-semibold text-slate-900">Skip existing files</div>
+							<div class="mt-1 text-sm text-slate-600">Create only missing destinations and leave existing files alone.</div>
+						</div>
+					</div>
+				</label>
+			</div>
+
+			<div class="flex flex-wrap items-center gap-3">
+				<button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-pine px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">Run transfers</button>
+				<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Running transfer...</div>
+			</div>
+		</form>
+	</div>
+}
+
+templ TransferSummaryCard(data pageData) {
+	<div class="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+		<div class="mb-4">
+			<h3 class="text-lg font-semibold text-slate-900">Execution summary</h3>
+			<p class="mt-1 text-sm text-slate-600">High-level outcome from the latest transfer run.</p>
+		</div>
+
+		if data.TransferMessage != "" {
+			<div class={ transferMessageClasses(data.TransferHasErrors) }>
+				<div class="font-semibold">{ data.TransferMessage }</div>
+				if data.TransferSummary.HasRun {
+					<div class="mt-2 text-sm">
+						Attempted { data.TransferSummary.Attempted } mapping(s),
+						created { data.TransferSummary.Created },
+						overwritten { data.TransferSummary.Overwritten },
+						skipped { data.TransferSummary.Skipped },
+						errors { data.TransferSummary.Errors }.
+					</div>
+				}
+			</div>
+		}
+
+		<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+			<div class="rounded-[1.5rem] bg-teal-50 px-5 py-4">
+				<p class="text-3xl font-semibold text-slate-900">{ data.TransferCount }</p>
+				<p class="mt-1 text-sm text-slate-600">configured rows</p>
+			</div>
+			<div class="rounded-[1.5rem] bg-slate-100 px-5 py-4">
+				<p class="text-3xl font-semibold text-slate-900">
+					if data.TransferSummary.HasRun {
+						{ data.TransferSummary.Attempted }
+					} else {
+						0
+					}
+				</p>
+				<p class="mt-1 text-sm text-slate-600">attempted</p>
+			</div>
+			<div class="rounded-[1.5rem] bg-emerald-100 px-5 py-4">
+				<p class="text-3xl font-semibold text-emerald-800">{ data.TransferSummary.Created }</p>
+				<p class="mt-1 text-sm text-emerald-700">created</p>
+			</div>
+			<div class="rounded-[1.5rem] bg-amber-100 px-5 py-4">
+				<p class="text-3xl font-semibold text-amber-800">{ data.TransferSummary.Overwritten }</p>
+				<p class="mt-1 text-sm text-amber-700">overwritten</p>
+			</div>
+			<div class="rounded-[1.5rem] bg-slate-200 px-5 py-4">
+				<p class="text-3xl font-semibold text-slate-800">{ data.TransferSummary.Skipped }</p>
+				<p class="mt-1 text-sm text-slate-700">skipped</p>
+			</div>
+			<div class="rounded-[1.5rem] bg-rose-100 px-5 py-4">
+				<p class="text-3xl font-semibold text-rose-800">{ data.TransferSummary.Errors }</p>
+				<p class="mt-1 text-sm text-rose-700">errors</p>
+			</div>
+		</div>
+	</div>
+}
+
+templ TransferTableCard(data pageData) {
+	<div class="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+		<div class="mb-4">
+			<h3 class="text-lg font-semibold text-slate-900">Configured file transfers</h3>
+			<p class="mt-1 text-sm text-slate-600">Edit the workbook-backed paths here, then save before running transfers.</p>
+		</div>
+
+		<form
+			method="post"
+			action="/save-transfer"
+			hx-post="/save-transfer"
+			hx-target="#app-shell"
+			hx-swap="outerHTML"
+			hx-disabled-elt="button[type='submit']"
+			class="space-y-4"
+		>
+			<input type="hidden" name="definitionsPath" value={ data.DefinitionsPath }/>
+			<input type="hidden" name="workbookPath" value={ data.WorkbookPath }/>
+			<input type="hidden" name="activeTab" value="file-transfer"/>
+			<input type="hidden" name="strategy" x-bind:value="strategy"/>
+
+			if data.SaveMessage != "" {
+				<div class={ saveMessageClasses(data.SaveHasErrors) }>{ data.SaveMessage }</div>
+			}
+
+			<div class="flex flex-wrap items-center gap-3">
+				<button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-ember px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">Save workbook changes</button>
+				<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Saving changes...</div>
+			</div>
+
+			<div class="overflow-x-auto">
+				<table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+					<thead>
+						<tr class="text-slate-500">
+							<th class="pb-3 pr-4 font-medium">#</th>
+							<th class="pb-3 pr-4 font-medium">Source</th>
+							<th class="pb-3 pr-4 font-medium">Source Exists</th>
+							<th class="pb-3 pr-4 font-medium">Destination</th>
+							<th class="pb-3 pr-4 font-medium">Destination Exists</th>
+							<th class="pb-3 pr-4 font-medium">Status</th>
+							<th class="pb-3 font-medium">Detail</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, row := range data.TransferRows {
+							<tr class="align-top">
+								<td class="py-3 pr-4 text-slate-500">
+									<input type="hidden" name="transferExcelRow" value={ row.ExcelRow }/>
+									{ row.Index }
+								</td>
+								<td class="py-3 pr-4">
+									<input name="transferSrc" value={ row.Src } class="w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+								</td>
+								<td class="py-3 pr-4">
+									if row.SrcExists {
+										<span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Yes</span>
+									} else {
+										<span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">No</span>
+									}
+								</td>
+								<td class="py-3 pr-4">
+									<input name="transferDest" value={ row.Dest } class="w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+								</td>
+								<td class="py-3 pr-4">
+									if row.DestExists {
+										<span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Yes</span>
+									} else {
+										<span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">No</span>
+									}
+								</td>
+								<td class="py-3 pr-4">
+									if row.Status != "" {
+										<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
+									} else {
+										<span class="text-slate-400">Not run</span>
+									}
+								</td>
+								<td class="py-3 text-slate-600">
+									if row.Detail != "" {
+										{ row.Detail }
+									} else {
+										No execution yet.
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</form>
+	</div>
+}
