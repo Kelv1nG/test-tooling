@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 	"tooling/config"
+	"tooling/templates"
 )
 
 type application struct {
@@ -44,8 +45,8 @@ func (a *application) routes() http.Handler {
 func (a *application) newPageData(
 	definitionsPath string,
 	workbookPath string,
-) pageData {
-	return pageData{
+) templates.PageData {
+	return templates.PageData{
 		ListenAddr:      a.listenAddr,
 		DefinitionsPath: definitionsPath,
 		WorkbookPath:    workbookPath,
@@ -56,7 +57,7 @@ func (a *application) newPageData(
 
 func (a *application) pageDataFromRequest(
 	request *http.Request,
-) pageData {
+) templates.PageData {
 	_ = request.ParseForm()
 
 	definitionsPath := strings.TrimSpace(request.FormValue("definitionsPath"))
@@ -75,7 +76,7 @@ func (a *application) pageDataFromRequest(
 	return data
 }
 
-func (a *application) populateConfigData(data *pageData) error {
+func (a *application) populateConfigData(data *templates.PageData) error {
 	configuration, err := a.loadConfiguration(
 		data.DefinitionsPath,
 		data.WorkbookPath,
@@ -108,7 +109,7 @@ func (a *application) loadConfiguration(
 func (a *application) saveTransferRows(
 	definitionsPath string,
 	workbookPath string,
-	rows []transferRowView,
+	rows []templates.TransferRowView,
 ) error {
 	loader, err := config.NewLoader(definitionsPath)
 	if err != nil {
@@ -124,7 +125,7 @@ func (a *application) saveTransferRows(
 func (a *application) saveCheckRows(
 	definitionsPath string,
 	workbookPath string,
-	rows []checkRowView,
+	rows []templates.CheckRowView,
 ) error {
 	loader, err := config.NewLoader(definitionsPath)
 	if err != nil {
@@ -138,13 +139,13 @@ func (a *application) saveCheckRows(
 }
 
 func (a *application) applyConfiguration(
-	data *pageData,
+	data *templates.PageData,
 	configuration config.Configuration,
 ) {
 	data.HasConfig = true
 	data.LoadedAt = time.Now().Format(time.RFC1123)
-	data.TransferRows = buildTransferRows(configuration.FileTransferMaps)
-	data.CheckRows = buildCheckRows(configuration.FileCheckRules)
+	data.TransferRows = templates.BuildTransferRows(configuration.FileTransferMaps)
+	data.CheckRows = templates.BuildCheckRows(configuration.FileCheckRules)
 	data.TransferCount = len(configuration.FileTransferMaps)
 	data.CheckCount = len(configuration.FileCheckRules)
 }
@@ -152,7 +153,7 @@ func (a *application) applyConfiguration(
 func (a *application) renderResponse(
 	writer http.ResponseWriter,
 	request *http.Request,
-	data pageData,
+	data templates.PageData,
 	statusCode int,
 ) {
 	renderStatus := statusCode
@@ -164,9 +165,9 @@ func (a *application) renderResponse(
 	}
 	writer.WriteHeader(renderStatus)
 
-	component := Page(data)
+	component := templates.Page(data)
 	if request != nil && request.Header.Get("HX-Request") == "true" {
-		component = AppShell(data)
+		component = templates.AppShell(data)
 	}
 
 	if err := component.Render(request.Context(), writer); err != nil {

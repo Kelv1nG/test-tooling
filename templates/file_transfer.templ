@@ -1,6 +1,6 @@
-package main
+package templates
 
-templ FileTransferTab(data pageData) {
+templ FileTransferTab(data PageData) {
 	<section
 		x-cloak
 		x-show="activeTab === 'file-transfer'"
@@ -25,7 +25,7 @@ templ FileTransferTab(data pageData) {
 	</section>
 }
 
-templ TransferControlsCard(data pageData) {
+templ TransferControlsCard(data PageData) {
 	<div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
 		<div class="mb-4">
 			<h2 class="text-xl font-semibold text-slate-900">Run transfer</h2>
@@ -75,7 +75,7 @@ templ TransferControlsCard(data pageData) {
 	</div>
 }
 
-templ TransferSummaryCard(data pageData) {
+templ TransferSummaryCard(data PageData) {
 	<div class="rounded-[1.5rem] border border-slate-200 bg-white p-5">
 		<div class="mb-4">
 			<h3 class="text-lg font-semibold text-slate-900">Execution summary</h3>
@@ -132,7 +132,7 @@ templ TransferSummaryCard(data pageData) {
 	</div>
 }
 
-templ TransferTableCard(data pageData) {
+templ TransferTableCard(data PageData) {
 	<div class="rounded-[1.5rem] border border-slate-200 bg-white p-5">
 		<div class="mb-4">
 			<h3 class="text-lg font-semibold text-slate-900">Configured file transfers</h3>

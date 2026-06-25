@@ -1,6 +1,6 @@
-package main
+package templates
 
-templ Page(data pageData) {
+templ Page(data PageData) {
 	<!doctype html>
 	<html lang="en">
 		<head>
@@ -18,7 +18,7 @@ templ Page(data pageData) {
 	</html>
 }
 
-templ AppShell(data pageData) {
+templ AppShell(data PageData) {
 	<div id="app-shell" x-data={ appShellExpression(data.ActiveTab) } class="min-h-screen">
 		@TabButtons()
 		@ConfigurationTab(data)

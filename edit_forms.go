@@ -6,9 +6,10 @@ import (
 	"strings"
 
 	"tooling/config"
+	"tooling/templates"
 )
 
-func parseTransferRowsForm(values map[string][]string) ([]transferRowView, error) {
+func parseTransferRowsForm(values map[string][]string) ([]templates.TransferRowView, error) {
 	excelRows := values["transferExcelRow"]
 	srcs := values["transferSrc"]
 	dests := values["transferDest"]
@@ -21,7 +22,7 @@ func parseTransferRowsForm(values map[string][]string) ([]transferRowView, error
 		return nil, fmt.Errorf("submitted transfer rows were incomplete")
 	}
 
-	rows := make([]transferRowView, 0, len(srcs))
+	rows := make([]templates.TransferRowView, 0, len(srcs))
 	var errs config.ValidationErrors
 
 	for index := range srcs {
@@ -39,7 +40,7 @@ func parseTransferRowsForm(values map[string][]string) ([]transferRowView, error
 		src := strings.TrimSpace(srcs[index])
 		dest := strings.TrimSpace(dests[index])
 
-		rows = append(rows, transferRowView{
+		rows = append(rows, templates.TransferRowView{
 			Index:      index + 1,
 			ExcelRow:   excelRow,
 			Src:        src,
@@ -64,7 +65,7 @@ func parseTransferRowsForm(values map[string][]string) ([]transferRowView, error
 	return rows, nil
 }
 
-func parseCheckRowsForm(values map[string][]string) ([]checkRowView, error) {
+func parseCheckRowsForm(values map[string][]string) ([]templates.CheckRowView, error) {
 	excelRows := values["checkExcelRow"]
 	newFiles := values["checkNewFile"]
 	oldFiles := values["checkOldFile"]
@@ -77,7 +78,7 @@ func parseCheckRowsForm(values map[string][]string) ([]checkRowView, error) {
 		return nil, fmt.Errorf("submitted check rows were incomplete")
 	}
 
-	rows := make([]checkRowView, 0, len(newFiles))
+	rows := make([]templates.CheckRowView, 0, len(newFiles))
 	var errs config.ValidationErrors
 
 	for index := range newFiles {
@@ -90,7 +91,7 @@ func parseCheckRowsForm(values map[string][]string) ([]checkRowView, error) {
 		newFile := strings.TrimSpace(newFiles[index])
 		oldFile := strings.TrimSpace(oldFiles[index])
 
-		rows = append(rows, checkRowView{
+		rows = append(rows, templates.CheckRowView{
 			Index:     index + 1,
 			ExcelRow:  excelRow,
 			NewFile:   newFile,
@@ -115,7 +116,7 @@ func parseCheckRowsForm(values map[string][]string) ([]checkRowView, error) {
 	return rows, nil
 }
 
-func buildTransferMappingsFromRows(rows []transferRowView) []config.FileTransferMap {
+func buildTransferMappingsFromRows(rows []templates.TransferRowView) []config.FileTransferMap {
 	maps := make([]config.FileTransferMap, 0, len(rows))
 
 	for _, row := range rows {
@@ -129,7 +130,7 @@ func buildTransferMappingsFromRows(rows []transferRowView) []config.FileTransfer
 	return maps
 }
 
-func buildCheckRulesFromRows(rows []checkRowView) []config.FileCheckRule {
+func buildCheckRulesFromRows(rows []templates.CheckRowView) []config.FileCheckRule {
 	rules := make([]config.FileCheckRule, 0, len(rows))
 
 	for _, row := range rows {

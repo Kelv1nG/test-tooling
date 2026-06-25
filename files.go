@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type FileConflictStrategy int
@@ -62,25 +63,24 @@ func writeCopy(src, dest string) error {
 	}
 	defer fin.Close()
 
-	buf := make([]byte, 1024)
+	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		return err
+	}
+
 	fout, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
-	defer fin.Close()
 
-	for {
-		n, err := fin.Read(buf)
-		if err != nil && err != io.EOF {
-			return err
-		}
-		if n == 0 {
-			break
-		}
-		if _, err := fout.Write(buf[:n]); err != nil {
-			return err
-		}
+	if _, err := io.Copy(fout, fin); err != nil {
+		_ = fout.Close()
+		return err
 	}
+
+	if err := fout.Close(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
