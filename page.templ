@@ -62,5 +62,40 @@ templ PageScripts() {
 	  window.appShell = (initialTab) => ({
 	    activeTab: initialTab || "configuration"
 	  });
+
+	  window.refreshTransferRowNumbers = (root) => {
+	    root.querySelectorAll("[data-transfer-row-number]").forEach((node, index) => {
+	      node.textContent = String(index + 1);
+	    });
+	  };
+
+	  window.addTransferRow = (button) => {
+	    const editor = button.closest("form")?.querySelector("[data-transfer-editor]");
+	    const template = editor?.querySelector("template[data-transfer-row-template]");
+	    const rows = editor?.querySelector("[data-transfer-rows]");
+	    if (!template || !rows) {
+	      return;
+	    }
+
+	    rows.insertAdjacentHTML("beforeend", template.innerHTML);
+	    window.refreshTransferRowNumbers(editor);
+
+	    const newRow = rows.lastElementChild;
+	    const firstInput = newRow?.querySelector("input[name='transferSrc']");
+	    if (firstInput) {
+	      firstInput.focus();
+	    }
+	  };
+
+	  window.removeTransferRow = (button) => {
+	    const editor = button.closest("[data-transfer-editor]");
+	    const row = button.closest("tr");
+	    if (!editor || !row) {
+	      return;
+	    }
+
+	    row.remove();
+	    window.refreshTransferRowNumbers(editor);
+	  };
 	</script>
 }

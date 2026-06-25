@@ -162,7 +162,7 @@ templ TransferTableCard(data pageData) {
 				<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Saving changes...</div>
 			</div>
 
-			<div class="overflow-x-auto">
+			<div data-transfer-editor class="overflow-x-auto">
 				<table class="min-w-full divide-y divide-slate-200 text-left text-sm">
 					<thead>
 						<tr class="text-slate-500">
@@ -173,17 +173,18 @@ templ TransferTableCard(data pageData) {
 							<th class="pb-3 pr-4 font-medium">Destination Exists</th>
 							<th class="pb-3 pr-4 font-medium">Status</th>
 							<th class="pb-3 font-medium">Detail</th>
+							<th class="pb-3 pl-4 font-medium">Action</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-slate-100">
+					<tbody data-transfer-rows class="divide-y divide-slate-100">
 						for _, row := range data.TransferRows {
 							<tr class="align-top">
 								<td class="py-3 pr-4 text-slate-500">
 									<input type="hidden" name="transferExcelRow" value={ row.ExcelRow }/>
-									{ row.Index }
+									<span data-transfer-row-number>{ row.Index }</span>
 								</td>
 								<td class="py-3 pr-4">
-									<input name="transferSrc" value={ row.Src } class="w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+									<input name="transferSrc" value={ row.Src } title={ row.Src } oninput="this.title=this.value" class="w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
 								</td>
 								<td class="py-3 pr-4">
 									if row.SrcExists {
@@ -193,7 +194,7 @@ templ TransferTableCard(data pageData) {
 									}
 								</td>
 								<td class="py-3 pr-4">
-									<input name="transferDest" value={ row.Dest } class="w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+									<input name="transferDest" value={ row.Dest } title={ row.Dest } oninput="this.title=this.value" class="w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
 								</td>
 								<td class="py-3 pr-4">
 									if row.DestExists {
@@ -216,10 +217,44 @@ templ TransferTableCard(data pageData) {
 										No execution yet.
 									}
 								</td>
+								<td class="py-3 pl-4">
+									<button type="button" onclick="window.removeTransferRow(this)" aria-label="Remove row" title="Remove row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">X</button>
+								</td>
 							</tr>
 						}
 					</tbody>
 				</table>
+				<template data-transfer-row-template>
+					<tr class="align-top">
+						<td class="py-3 pr-4 text-slate-500">
+							<input type="hidden" name="transferExcelRow" value="0"/>
+							<span data-transfer-row-number></span>
+						</td>
+						<td class="py-3 pr-4">
+							<input name="transferSrc" oninput="this.title=this.value" class="w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+						</td>
+						<td class="py-3 pr-4">
+							<span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Recheck after save</span>
+						</td>
+						<td class="py-3 pr-4">
+							<input name="transferDest" oninput="this.title=this.value" class="w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+						</td>
+						<td class="py-3 pr-4">
+							<span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Recheck after save</span>
+						</td>
+						<td class="py-3 pr-4">
+							<span class="text-slate-400">Not run</span>
+						</td>
+						<td class="py-3 text-slate-600">New row.</td>
+						<td class="py-3 pl-4">
+							<button type="button" onclick="window.removeTransferRow(this)" aria-label="Remove row" title="Remove row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">X</button>
+						</td>
+					</tr>
+				</template>
+			</div>
+
+			<div class="flex justify-center pt-2">
+				<button type="button" onclick="window.addTransferRow(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add row</button>
 			</div>
 		</form>
 	</div>

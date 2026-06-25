@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/xuri/excelize/v2"
@@ -76,13 +77,20 @@ func (d FileTransferTableDefinition) save(
 		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
 	}
 
+	existingMaps, err := d.read(file)
+	if err != nil {
+		return err
+	}
+
 	var errs ValidationErrors
+	submittedRows := make([]FileTransferMap, 0, len(maps))
+	submittedExistingRows := make(map[int]struct{}, len(maps))
 
 	for _, mapping := range maps {
 		src := strings.TrimSpace(mapping.Src)
 		dst := strings.TrimSpace(mapping.Dest)
 
-		if mapping.ExcelRow < 2 {
+		if mapping.ExcelRow < 0 {
 			errs = append(errs, fmt.Errorf("sheet %q: invalid excel row %d", d.Sheet, mapping.ExcelRow))
 			continue
 		}
@@ -99,23 +107,80 @@ func (d FileTransferTableDefinition) save(
 			continue
 		}
 
-		srcCell, err := excelize.CoordinatesToCellName(srcCol+1, mapping.ExcelRow)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("sheet %q, row %d: resolve source cell: %w", d.Sheet, mapping.ExcelRow, err))
+		submittedRow := FileTransferMap{
+			ExcelRow: mapping.ExcelRow,
+			Src:      src,
+			Dest:     dst,
+		}
+
+		submittedRows = append(submittedRows, submittedRow)
+		if mapping.ExcelRow >= 2 {
+			submittedExistingRows[mapping.ExcelRow] = struct{}{}
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	removedRows := make([]int, 0)
+	for _, existing := range existingMaps {
+		if _, keep := submittedExistingRows[existing.ExcelRow]; keep {
 			continue
 		}
 
-		dstCell, err := excelize.CoordinatesToCellName(dstCol+1, mapping.ExcelRow)
+		removedRows = append(removedRows, existing.ExcelRow)
+	}
+
+	slices.Sort(removedRows)
+	slices.Reverse(removedRows)
+
+	for _, row := range removedRows {
+		if err := file.RemoveRow(d.Sheet, row); err != nil {
+			errs = append(errs, fmt.Errorf("sheet %q: remove row %d: %w", d.Sheet, row, err))
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	appendStartRow := 2
+	if len(existingMaps) > len(removedRows) {
+		appendStartRow += len(existingMaps) - len(removedRows)
+	}
+
+	newRowOffset := 0
+	for _, mapping := range submittedRows {
+		targetRow := mapping.ExcelRow
+		if mapping.ExcelRow >= 2 {
+			targetRow -= removedRowsBefore(removedRows, mapping.ExcelRow)
+		} else {
+			targetRow = appendStartRow + newRowOffset
+			if err := file.InsertRows(d.Sheet, targetRow, 1); err != nil {
+				errs = append(errs, fmt.Errorf("sheet %q: insert row %d: %w", d.Sheet, targetRow, err))
+				continue
+			}
+			newRowOffset++
+		}
+
+		srcCell, err := excelize.CoordinatesToCellName(srcCol+1, targetRow)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("sheet %q, row %d: resolve destination cell: %w", d.Sheet, mapping.ExcelRow, err))
+			errs = append(errs, fmt.Errorf("sheet %q, row %d: resolve source cell: %w", d.Sheet, targetRow, err))
 			continue
 		}
 
-		if err := file.SetCellStr(d.Sheet, srcCell, src); err != nil {
+		dstCell, err := excelize.CoordinatesToCellName(dstCol+1, targetRow)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("sheet %q, row %d: resolve destination cell: %w", d.Sheet, targetRow, err))
+			continue
+		}
+
+		if err := file.SetCellStr(d.Sheet, srcCell, mapping.Src); err != nil {
 			errs = append(errs, fmt.Errorf("sheet %q, cell %s: %w", d.Sheet, srcCell, err))
 		}
 
-		if err := file.SetCellStr(d.Sheet, dstCell, dst); err != nil {
+		if err := file.SetCellStr(d.Sheet, dstCell, mapping.Dest); err != nil {
 			errs = append(errs, fmt.Errorf("sheet %q, cell %s: %w", d.Sheet, dstCell, err))
 		}
 	}
@@ -211,4 +276,21 @@ func sheetHeaders(
 	}
 
 	return indexHeaders(rows[0]), nil
+}
+
+func removedRowsBefore(
+	removedRows []int,
+	row int,
+) int {
+	count := 0
+
+	for _, removedRow := range removedRows {
+		if removedRow >= row {
+			continue
+		}
+
+		count++
+	}
+
+	return count
 }

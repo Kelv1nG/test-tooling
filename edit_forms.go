@@ -25,10 +25,15 @@ func parseTransferRowsForm(values map[string][]string) ([]transferRowView, error
 	var errs config.ValidationErrors
 
 	for index := range srcs {
-		excelRow, err := strconv.Atoi(strings.TrimSpace(excelRows[index]))
-		if err != nil {
-			errs = append(errs, fmt.Errorf("transfer row %d is missing its workbook position", index+1))
-			excelRow = 0
+		excelRowText := strings.TrimSpace(excelRows[index])
+		excelRow := 0
+		if excelRowText != "" {
+			parsedRow, err := strconv.Atoi(excelRowText)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("transfer row %d has an invalid workbook position", index+1))
+			} else {
+				excelRow = parsedRow
+			}
 		}
 
 		src := strings.TrimSpace(srcs[index])
