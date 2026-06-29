@@ -34,6 +34,7 @@ func (a *application) routes() http.Handler {
 	mux.HandleFunc("/transfer", a.handleTransfer)
 	mux.HandleFunc("/save-transfer", a.handleSaveTransfer)
 	mux.HandleFunc("/save-checks", a.handleSaveChecks)
+	mux.HandleFunc("/verify-checks", a.handleVerifyChecks)
 	mux.HandleFunc("/healthz", a.handleHealth)
 
 	return mux

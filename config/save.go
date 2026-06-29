@@ -3,9 +3,12 @@ package config
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/xuri/excelize/v2"
+
+	"tooling/headersearch"
 )
 
 func (l *Loader) SaveTransferWorkbook(
@@ -211,6 +214,11 @@ func (d FileCheckTableDefinition) save(
 		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
 	}
 
+	headerSheetCol, anchorCol, parentDirectionCol, maxHeaderDepthCol, requireOrderCol, columnErrs := d.headerCheckColumns(headers)
+	if len(columnErrs) > 0 {
+		return ValidationErrors(columnErrs)
+	}
+
 	var errs ValidationErrors
 
 	for _, rule := range rules {
@@ -234,6 +242,11 @@ func (d FileCheckTableDefinition) save(
 			continue
 		}
 
+		if err := validateHeaderCheckConfig(d, rule); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
 		newFileCell, err := excelize.CoordinatesToCellName(newFileCol+1, rule.ExcelRow)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("sheet %q, row %d: resolve new file cell: %w", d.Sheet, rule.ExcelRow, err))
@@ -253,6 +266,34 @@ func (d FileCheckTableDefinition) save(
 		if err := file.SetCellStr(d.Sheet, oldFileCell, oldFile); err != nil {
 			errs = append(errs, fmt.Errorf("sheet %q, cell %s: %w", d.Sheet, oldFileCell, err))
 		}
+
+		if d.hasHeaderCheckColumns() {
+			if err := setOptionalStringCell(file, d.Sheet, headerSheetCol, rule.ExcelRow, rule.HeaderCheck.Sheet); err != nil {
+				errs = append(errs, err)
+			}
+			if err := setOptionalStringCell(file, d.Sheet, anchorCol, rule.ExcelRow, rule.HeaderCheck.Anchor); err != nil {
+				errs = append(errs, err)
+			}
+			if err := setOptionalStringCell(file, d.Sheet, parentDirectionCol, rule.ExcelRow, rule.HeaderCheck.ParentDirection); err != nil {
+				errs = append(errs, err)
+			}
+
+			maxDepthValue := ""
+			if rule.HeaderCheck.MaxHeaderDepth > 0 {
+				maxDepthValue = strconv.Itoa(rule.HeaderCheck.MaxHeaderDepth)
+			}
+			if err := setOptionalStringCell(file, d.Sheet, maxHeaderDepthCol, rule.ExcelRow, maxDepthValue); err != nil {
+				errs = append(errs, err)
+			}
+
+			requireOrderValue := ""
+			if rule.HeaderCheck.hasValues() {
+				requireOrderValue = strconv.FormatBool(rule.HeaderCheck.RequireOrder)
+			}
+			if err := setOptionalStringCell(file, d.Sheet, requireOrderCol, rule.ExcelRow, requireOrderValue); err != nil {
+				errs = append(errs, err)
+			}
+		}
 	}
 
 	if len(errs) > 0 {
@@ -260,6 +301,60 @@ func (d FileCheckTableDefinition) save(
 	}
 
 	return nil
+}
+
+func validateHeaderCheckConfig(
+	definition FileCheckTableDefinition,
+	rule FileCheckRule,
+) error {
+	if !definition.hasHeaderCheckColumns() || !rule.HeaderCheck.hasValues() {
+		return nil
+	}
+
+	if strings.TrimSpace(rule.HeaderCheck.Sheet) == "" {
+		return fmt.Errorf("sheet %q, row %d: column %q is required when header verification is configured", definition.Sheet, rule.ExcelRow, definition.HeaderSheetCol)
+	}
+
+	if strings.TrimSpace(rule.HeaderCheck.Anchor) == "" {
+		return fmt.Errorf("sheet %q, row %d: column %q is required when header verification is configured", definition.Sheet, rule.ExcelRow, definition.AnchorCol)
+	}
+
+	if !headersearch.Direction(rule.HeaderCheck.ParentDirection).Valid() {
+		return fmt.Errorf("sheet %q, row %d: column %q must be one of up, down, left, right", definition.Sheet, rule.ExcelRow, definition.ParentDirectionCol)
+	}
+
+	if rule.HeaderCheck.MaxHeaderDepth < 1 {
+		return fmt.Errorf("sheet %q, row %d: column %q must be a whole number greater than 0", definition.Sheet, rule.ExcelRow, definition.MaxHeaderDepthCol)
+	}
+
+	return nil
+}
+
+func setOptionalStringCell(
+	file *excelize.File,
+	sheet string,
+	column int,
+	row int,
+	value string,
+) error {
+	cell, err := excelize.CoordinatesToCellName(column+1, row)
+	if err != nil {
+		return fmt.Errorf("sheet %q, row %d: resolve optional cell: %w", sheet, row, err)
+	}
+
+	if err := file.SetCellStr(sheet, cell, value); err != nil {
+		return fmt.Errorf("sheet %q, cell %s: %w", sheet, cell, err)
+	}
+
+	return nil
+}
+
+func (c HeaderCheckConfig) hasValues() bool {
+	return strings.TrimSpace(c.Sheet) != "" ||
+		strings.TrimSpace(c.Anchor) != "" ||
+		strings.TrimSpace(c.ParentDirection) != "" ||
+		c.MaxHeaderDepth > 0 ||
+		c.RequireOrder
 }
 
 func sheetHeaders(

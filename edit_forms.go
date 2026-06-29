@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"tooling/config"
+	"tooling/headersearch"
 	"tooling/templates"
 )
 
@@ -65,9 +66,14 @@ func parseTransferRowsForm(
 
 func parseCheckRowsForm(values map[string][]string) ([]templates.CheckRowView, error) {
 	form := checkRowsForm{
-		excelRows: values["checkExcelRow"],
-		newFiles:  values["checkNewFile"],
-		oldFiles:  values["checkOldFile"],
+		excelRows:        values["checkExcelRow"],
+		newFiles:         values["checkNewFile"],
+		oldFiles:         values["checkOldFile"],
+		headerSheets:     values["checkHeaderSheet"],
+		anchors:          values["checkHeaderAnchor"],
+		parentDirections: values["checkParentDirection"],
+		maxHeaderDepths:  values["checkMaxHeaderDepth"],
+		requireOrders:    values["checkRequireOrder"],
 	}
 
 	if form.isEmpty() {
@@ -93,14 +99,28 @@ func parseCheckRowsForm(values map[string][]string) ([]templates.CheckRowView, e
 
 		newFile := strings.TrimSpace(form.newFiles[index])
 		oldFile := strings.TrimSpace(form.oldFiles[index])
+		headerSheet := strings.TrimSpace(form.headerSheets[index])
+		headerAnchor := strings.TrimSpace(form.anchors[index])
+		parentDirection := strings.TrimSpace(form.parentDirections[index])
+		maxHeaderDepth := strings.TrimSpace(form.maxHeaderDepths[index])
+		requireOrder, err := strconv.ParseBool(strings.TrimSpace(form.requireOrders[index]))
+		if err != nil {
+			errs = append(errs, fmt.Errorf("check row %d has an invalid order requirement", index+1))
+			requireOrder = false
+		}
 
 		rows = append(rows, templates.CheckRowView{
-			Index:     index + 1,
-			ExcelRow:  excelRow,
-			NewFile:   newFile,
-			NewExists: fileExistsOrFalse(newFile),
-			OldFile:   oldFile,
-			OldExists: fileExistsOrFalse(oldFile),
+			Index:                 index + 1,
+			ExcelRow:              excelRow,
+			NewFile:               newFile,
+			NewExists:             fileExistsOrFalse(newFile),
+			OldFile:               oldFile,
+			OldExists:             fileExistsOrFalse(oldFile),
+			HeaderSheet:           headerSheet,
+			HeaderAnchor:          headerAnchor,
+			HeaderParentDirection: parentDirection,
+			HeaderMaxDepth:        maxHeaderDepth,
+			RequireOrder:          requireOrder,
 		})
 
 		if newFile == "" {
@@ -110,6 +130,8 @@ func parseCheckRowsForm(values map[string][]string) ([]templates.CheckRowView, e
 		if oldFile == "" {
 			errs = append(errs, fmt.Errorf("check row %d requires an old file path", index+1))
 		}
+
+		errs = append(errs, validateHeaderCheckForm(index+1, headerSheet, headerAnchor, parentDirection, maxHeaderDepth)...)
 	}
 
 	if len(errs) > 0 {
@@ -138,17 +160,35 @@ func (f transferRowsForm) validateLengths() error {
 }
 
 type checkRowsForm struct {
-	excelRows []string
-	newFiles  []string
-	oldFiles  []string
+	excelRows        []string
+	newFiles         []string
+	oldFiles         []string
+	headerSheets     []string
+	anchors          []string
+	parentDirections []string
+	maxHeaderDepths  []string
+	requireOrders    []string
 }
 
 func (f checkRowsForm) isEmpty() bool {
-	return len(f.excelRows) == 0 && len(f.newFiles) == 0 && len(f.oldFiles) == 0
+	return len(f.excelRows) == 0 &&
+		len(f.newFiles) == 0 &&
+		len(f.oldFiles) == 0 &&
+		len(f.headerSheets) == 0 &&
+		len(f.anchors) == 0 &&
+		len(f.parentDirections) == 0 &&
+		len(f.maxHeaderDepths) == 0 &&
+		len(f.requireOrders) == 0
 }
 
 func (f checkRowsForm) validateLengths() error {
-	if len(f.excelRows) != len(f.newFiles) || len(f.newFiles) != len(f.oldFiles) {
+	if len(f.excelRows) != len(f.newFiles) ||
+		len(f.newFiles) != len(f.oldFiles) ||
+		len(f.oldFiles) != len(f.headerSheets) ||
+		len(f.headerSheets) != len(f.anchors) ||
+		len(f.anchors) != len(f.parentDirections) ||
+		len(f.parentDirections) != len(f.maxHeaderDepths) ||
+		len(f.maxHeaderDepths) != len(f.requireOrders) {
 		return fmt.Errorf("mismatched check row fields")
 	}
 
@@ -207,4 +247,37 @@ func validateTransferPath(
 	}
 
 	return nil
+}
+
+func validateHeaderCheckForm(
+	rowIndex int,
+	sheet string,
+	anchor string,
+	parentDirection string,
+	maxHeaderDepth string,
+) []error {
+	if sheet == "" && anchor == "" && parentDirection == "" && maxHeaderDepth == "" {
+		return nil
+	}
+
+	var errs []error
+
+	if sheet == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires a verification sheet", rowIndex))
+	}
+	if anchor == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires a verification anchor", rowIndex))
+	}
+	if parentDirection == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires a verification direction", rowIndex))
+	} else if !headersearch.Direction(parentDirection).Valid() {
+		errs = append(errs, fmt.Errorf("check row %d has an invalid verification direction", rowIndex))
+	}
+	if maxHeaderDepth == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires a verification max depth", rowIndex))
+	} else if depth, err := strconv.Atoi(maxHeaderDepth); err != nil || depth < 1 {
+		errs = append(errs, fmt.Errorf("check row %d requires a verification max depth greater than 0", rowIndex))
+	}
+
+	return errs
 }

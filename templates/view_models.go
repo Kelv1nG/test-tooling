@@ -20,6 +20,9 @@ type PageData struct {
 	TransferHasErrors bool
 	TransferSummary   TransferSummaryView
 	TransferResults   []TransferResultView
+	CheckMessage      string
+	CheckHasIssues    bool
+	CheckSummary      CheckSummaryView
 }
 
 type TransferRowView struct {
@@ -35,12 +38,20 @@ type TransferRowView struct {
 }
 
 type CheckRowView struct {
-	Index     int
-	ExcelRow  int
-	NewFile   string
-	NewExists bool
-	OldFile   string
-	OldExists bool
+	Index                 int
+	ExcelRow              int
+	NewFile               string
+	NewExists             bool
+	OldFile               string
+	OldExists             bool
+	HeaderSheet           string
+	HeaderAnchor          string
+	HeaderParentDirection string
+	HeaderMaxDepth        string
+	RequireOrder          bool
+	Status                string
+	Badge                 string
+	Detail                string
 }
 
 type TransferResultView struct {
@@ -59,4 +70,13 @@ type TransferSummaryView struct {
 	Skipped     int
 	Errors      int
 	HasRun      bool
+}
+
+type CheckSummaryView struct {
+	Attempted int
+	Matched   int
+	Changed   int
+	Errors    int
+	Skipped   int
+	HasRun    bool
 }

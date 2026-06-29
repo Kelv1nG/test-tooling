@@ -89,5 +89,42 @@ func (d FileCheckTableDefinition) validationErrors() []error {
 		)
 	}
 
+	if d.hasAnyHeaderCheckColumns() {
+		if strings.TrimSpace(d.HeaderSheetCol) == "" {
+			errs = append(
+				errs,
+				fmt.Errorf("file_check.header_sheet_column is required when header verification columns are configured"),
+			)
+		}
+
+		if strings.TrimSpace(d.AnchorCol) == "" {
+			errs = append(
+				errs,
+				fmt.Errorf("file_check.anchor_column is required when header verification columns are configured"),
+			)
+		}
+
+		if strings.TrimSpace(d.ParentDirectionCol) == "" {
+			errs = append(
+				errs,
+				fmt.Errorf("file_check.parent_direction_column is required when header verification columns are configured"),
+			)
+		}
+
+		if strings.TrimSpace(d.MaxHeaderDepthCol) == "" {
+			errs = append(
+				errs,
+				fmt.Errorf("file_check.max_header_depth_column is required when header verification columns are configured"),
+			)
+		}
+
+		if strings.TrimSpace(d.RequireOrderCol) == "" {
+			errs = append(
+				errs,
+				fmt.Errorf("file_check.require_order_column is required when header verification columns are configured"),
+			)
+		}
+	}
+
 	return errs
 }

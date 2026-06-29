@@ -209,6 +209,50 @@ func (a *application) handleSaveChecks(
 	a.renderResponse(writer, request, data, http.StatusOK)
 }
 
+func (a *application) handleVerifyChecks(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	if !allowMethod(writer, request, http.MethodPost) {
+		return
+	}
+
+	data := a.pageDataFromRequest(request)
+	data.ActiveTab = tabChecking
+
+	if err := a.populateConfigData(&data); err != nil {
+		data.LoadError = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	rows, err := parseCheckRowsForm(request.Form)
+	if len(rows) > 0 {
+		data.CheckRows = rows
+		data.CheckCount = len(rows)
+	}
+
+	if err != nil {
+		data.CheckHasIssues = true
+		data.CheckMessage = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	data.CheckRows, data.CheckSummary = runCheckVerification(data.CheckRows)
+	data.CheckHasIssues = data.CheckSummary.Changed > 0 || data.CheckSummary.Errors > 0
+	data.CheckMessage = fmt.Sprintf(
+		"Verification checked %d row(s): matched %d, changed %d, errors %d, skipped %d.",
+		data.CheckSummary.Attempted,
+		data.CheckSummary.Matched,
+		data.CheckSummary.Changed,
+		data.CheckSummary.Errors,
+		data.CheckSummary.Skipped,
+	)
+
+	a.renderResponse(writer, request, data, http.StatusOK)
+}
+
 func (a *application) handleHealth(
 	writer http.ResponseWriter,
 	_ *http.Request,

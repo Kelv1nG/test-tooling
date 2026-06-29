@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"time"
 
 	"tooling/config"
@@ -72,12 +73,17 @@ func buildCheckRows(
 
 	for index, rule := range rules {
 		rows = append(rows, templates.CheckRowView{
-			Index:     index + 1,
-			ExcelRow:  rule.ExcelRow,
-			NewFile:   rule.NewFile,
-			NewExists: fileExistsOrFalse(rule.NewFile),
-			OldFile:   rule.OldFile,
-			OldExists: fileExistsOrFalse(rule.OldFile),
+			Index:                 index + 1,
+			ExcelRow:              rule.ExcelRow,
+			NewFile:               rule.NewFile,
+			NewExists:             fileExistsOrFalse(rule.NewFile),
+			OldFile:               rule.OldFile,
+			OldExists:             fileExistsOrFalse(rule.OldFile),
+			HeaderSheet:           rule.HeaderCheck.Sheet,
+			HeaderAnchor:          rule.HeaderCheck.Anchor,
+			HeaderParentDirection: rule.HeaderCheck.ParentDirection,
+			HeaderMaxDepth:        formatHeaderMaxDepth(rule.HeaderCheck.MaxHeaderDepth),
+			RequireOrder:          rule.HeaderCheck.RequireOrder,
 		})
 	}
 
@@ -106,12 +112,40 @@ func buildCheckRules(
 	rules := make([]config.FileCheckRule, 0, len(rows))
 
 	for _, row := range rows {
-		rules = append(rules, config.FileCheckRule{
-			ExcelRow: row.ExcelRow,
-			NewFile:  row.NewFile,
-			OldFile:  row.OldFile,
-		})
+		rules = append(rules, buildCheckRule(row))
 	}
 
 	return rules
+}
+
+func buildCheckRule(row templates.CheckRowView) config.FileCheckRule {
+	return config.FileCheckRule{
+		ExcelRow: row.ExcelRow,
+		NewFile:  row.NewFile,
+		OldFile:  row.OldFile,
+		HeaderCheck: config.HeaderCheckConfig{
+			Sheet:           row.HeaderSheet,
+			Anchor:          row.HeaderAnchor,
+			ParentDirection: row.HeaderParentDirection,
+			MaxHeaderDepth:  parseHeaderMaxDepth(row.HeaderMaxDepth),
+			RequireOrder:    row.RequireOrder,
+		},
+	}
+}
+
+func formatHeaderMaxDepth(value int) string {
+	if value < 1 {
+		return ""
+	}
+
+	return strconv.Itoa(value)
+}
+
+func parseHeaderMaxDepth(value string) int {
+	depth, err := strconv.Atoi(value)
+	if err != nil || depth < 1 {
+		return 0
+	}
+
+	return depth
 }

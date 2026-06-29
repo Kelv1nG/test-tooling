@@ -2,8 +2,12 @@ package config
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/xuri/excelize/v2"
+
+	"tooling/headersearch"
 )
 
 func (d FileCheckTableDefinition) read(
@@ -45,6 +49,12 @@ func (d FileCheckTableDefinition) read(
 		)
 	}
 
+	if len(errs) > 0 {
+		return nil, errs
+	}
+
+	headerSheetCol, anchorCol, parentDirectionCol, maxHeaderDepthCol, requireOrderCol, columnErrs := d.headerCheckColumns(headers)
+	errs = append(errs, columnErrs...)
 	if len(errs) > 0 {
 		return nil, errs
 	}
@@ -95,11 +105,31 @@ func (d FileCheckTableDefinition) read(
 			continue
 		}
 
-		rules = append(rules, FileCheckRule{
+		rule := FileCheckRule{
 			ExcelRow: excelRow,
-			NewFile: newFile,
-			OldFile: oldFile,
-		})
+			NewFile:  newFile,
+			OldFile:  oldFile,
+		}
+
+		if d.hasHeaderCheckColumns() {
+			headerCheck, err := parseHeaderCheckConfig(
+				d,
+				excelRow,
+				getCell(row, headerSheetCol),
+				getCell(row, anchorCol),
+				getCell(row, parentDirectionCol),
+				getCell(row, maxHeaderDepthCol),
+				getCell(row, requireOrderCol),
+			)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			rule.HeaderCheck = headerCheck
+		}
+
+		rules = append(rules, rule)
 	}
 
 	if len(errs) > 0 {
@@ -107,4 +137,155 @@ func (d FileCheckTableDefinition) read(
 	}
 
 	return rules, nil
+}
+
+func (d FileCheckTableDefinition) hasAnyHeaderCheckColumns() bool {
+	return strings.TrimSpace(d.HeaderSheetCol) != "" ||
+		strings.TrimSpace(d.AnchorCol) != "" ||
+		strings.TrimSpace(d.ParentDirectionCol) != "" ||
+		strings.TrimSpace(d.MaxHeaderDepthCol) != "" ||
+		strings.TrimSpace(d.RequireOrderCol) != ""
+}
+
+func (d FileCheckTableDefinition) hasHeaderCheckColumns() bool {
+	return strings.TrimSpace(d.HeaderSheetCol) != "" &&
+		strings.TrimSpace(d.AnchorCol) != "" &&
+		strings.TrimSpace(d.ParentDirectionCol) != "" &&
+		strings.TrimSpace(d.MaxHeaderDepthCol) != "" &&
+		strings.TrimSpace(d.RequireOrderCol) != ""
+}
+
+func (d FileCheckTableDefinition) headerCheckColumns(
+	headers map[string]int,
+) (
+	headerSheetCol int,
+	anchorCol int,
+	parentDirectionCol int,
+	maxHeaderDepthCol int,
+	requireOrderCol int,
+	errs []error,
+) {
+	if !d.hasHeaderCheckColumns() {
+		return 0, 0, 0, 0, 0, nil
+	}
+
+	var err error
+
+	headerSheetCol, err = requireColumn(headers, d.HeaderSheetCol)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("sheet %q: %w", d.Sheet, err))
+	}
+
+	anchorCol, err = requireColumn(headers, d.AnchorCol)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("sheet %q: %w", d.Sheet, err))
+	}
+
+	parentDirectionCol, err = requireColumn(headers, d.ParentDirectionCol)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("sheet %q: %w", d.Sheet, err))
+	}
+
+	maxHeaderDepthCol, err = requireColumn(headers, d.MaxHeaderDepthCol)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("sheet %q: %w", d.Sheet, err))
+	}
+
+	requireOrderCol, err = requireColumn(headers, d.RequireOrderCol)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("sheet %q: %w", d.Sheet, err))
+	}
+
+	return headerSheetCol, anchorCol, parentDirectionCol, maxHeaderDepthCol, requireOrderCol, errs
+}
+
+func parseHeaderCheckConfig(
+	definition FileCheckTableDefinition,
+	excelRow int,
+	sheet string,
+	anchor string,
+	parentDirection string,
+	maxHeaderDepth string,
+	requireOrder string,
+) (HeaderCheckConfig, error) {
+	if sheet == "" && anchor == "" && parentDirection == "" && maxHeaderDepth == "" && requireOrder == "" {
+		return HeaderCheckConfig{}, nil
+	}
+
+	if sheet == "" {
+		return HeaderCheckConfig{}, fmt.Errorf(
+			"sheet %q, row %d: column %q is required when header verification is configured",
+			definition.Sheet,
+			excelRow,
+			definition.HeaderSheetCol,
+		)
+	}
+
+	if anchor == "" {
+		return HeaderCheckConfig{}, fmt.Errorf(
+			"sheet %q, row %d: column %q is required when header verification is configured",
+			definition.Sheet,
+			excelRow,
+			definition.AnchorCol,
+		)
+	}
+
+	if parentDirection == "" {
+		return HeaderCheckConfig{}, fmt.Errorf(
+			"sheet %q, row %d: column %q is required when header verification is configured",
+			definition.Sheet,
+			excelRow,
+			definition.ParentDirectionCol,
+		)
+	}
+
+	if !headersearch.Direction(parentDirection).Valid() {
+		return HeaderCheckConfig{}, fmt.Errorf(
+			"sheet %q, row %d: column %q must be one of up, down, left, right",
+			definition.Sheet,
+			excelRow,
+			definition.ParentDirectionCol,
+		)
+	}
+
+	if maxHeaderDepth == "" {
+		return HeaderCheckConfig{}, fmt.Errorf(
+			"sheet %q, row %d: column %q is required when header verification is configured",
+			definition.Sheet,
+			excelRow,
+			definition.MaxHeaderDepthCol,
+		)
+	}
+
+	depth, err := strconv.Atoi(maxHeaderDepth)
+	if err != nil || depth < 1 {
+		return HeaderCheckConfig{}, fmt.Errorf(
+			"sheet %q, row %d: column %q must be a whole number greater than 0",
+			definition.Sheet,
+			excelRow,
+			definition.MaxHeaderDepthCol,
+		)
+	}
+
+	requireOrderValue := false
+	if requireOrder != "" {
+		parsed, err := strconv.ParseBool(requireOrder)
+		if err != nil {
+			return HeaderCheckConfig{}, fmt.Errorf(
+				"sheet %q, row %d: column %q must be true or false",
+				definition.Sheet,
+				excelRow,
+				definition.RequireOrderCol,
+			)
+		}
+		requireOrderValue = parsed
+	}
+
+	return HeaderCheckConfig{
+		Sheet:           sheet,
+		Anchor:          anchor,
+		ParentDirection: parentDirection,
+		MaxHeaderDepth:  depth,
+		RequireOrder:    requireOrderValue,
+	}, nil
 }

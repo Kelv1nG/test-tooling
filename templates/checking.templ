@@ -9,11 +9,11 @@ templ CheckingTab(data PageData) {
 	>
 		if data.HasConfig {
 			<div class="mb-4">
-				<h2 class="text-xl font-semibold text-slate-900">File checks</h2>
-				<p class="mt-1 text-sm text-slate-600">Quick existence view for the configured checking rows.</p>
+				<h2 class="text-xl font-semibold text-slate-900">Header verification</h2>
+				<p class="mt-1 text-sm text-slate-600">Compare old-file headers against new-file headers for the configured rows. The sheet field accepts a sheet name like <span class="font-mono text-xs">Report</span> or a 1-based sheet index like <span class="font-mono text-xs">2</span>. Value-search checks can come later.</p>
 			</div>
 
-			<div class="mb-6 grid gap-4 sm:grid-cols-2">
+			<div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<div class="rounded-[1.5rem] bg-amber-50 px-5 py-4">
 					<p class="text-3xl font-semibold text-slate-900">{ data.CheckCount }</p>
 					<p class="mt-1 text-sm text-slate-600">configured check rows</p>
@@ -21,6 +21,16 @@ templ CheckingTab(data PageData) {
 				<div class="rounded-[1.5rem] bg-slate-100 px-5 py-4">
 					<p class="text-3xl font-semibold text-slate-900">{ data.TransferCount }</p>
 					<p class="mt-1 text-sm text-slate-600">transfer rows loaded alongside checks</p>
+				</div>
+				<div class="rounded-[1.5rem] bg-teal-50 px-5 py-4">
+					<p class="text-3xl font-semibold text-slate-900">
+						if data.CheckSummary.HasRun {
+							{ data.CheckSummary.Attempted }
+						} else {
+							0
+						}
+					</p>
+					<p class="mt-1 text-sm text-slate-600">verified this run</p>
 				</div>
 			</div>
 
@@ -41,9 +51,14 @@ templ CheckingTab(data PageData) {
 					<div class={ saveMessageClasses(data.SaveHasErrors) }>{ data.SaveMessage }</div>
 				}
 
+				if data.CheckMessage != "" {
+					<div class={ checkMessageClasses(data.CheckHasIssues) }>{ data.CheckMessage }</div>
+				}
+
 				<div class="flex flex-wrap items-center gap-3">
 					<button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-ember px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">Save workbook changes</button>
-					<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Saving changes...</div>
+					<button type="submit" formaction="/verify-checks" hx-post="/verify-checks" class="inline-flex items-center justify-center rounded-2xl bg-pine px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">Run verification</button>
+					<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Working...</div>
 				</div>
 
 				<div class="overflow-x-auto">
@@ -54,7 +69,14 @@ templ CheckingTab(data PageData) {
 								<th class="pb-3 pr-4 font-medium">New File</th>
 								<th class="pb-3 pr-4 font-medium">Exists</th>
 								<th class="pb-3 pr-4 font-medium">Old File</th>
-								<th class="pb-3 font-medium">Exists</th>
+								<th class="pb-3 pr-4 font-medium">Exists</th>
+								<th class="pb-3 pr-4 font-medium">Sheet / Index</th>
+								<th class="pb-3 pr-4 font-medium">Anchor</th>
+								<th class="pb-3 pr-4 font-medium">Direction</th>
+								<th class="pb-3 pr-4 font-medium">Depth</th>
+								<th class="pb-3 pr-4 font-medium">Ordered</th>
+								<th class="pb-3 pr-4 font-medium">Status</th>
+								<th class="pb-3 font-medium">Detail</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-slate-100">
@@ -82,6 +104,44 @@ templ CheckingTab(data PageData) {
 											<span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Yes</span>
 										} else {
 											<span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">No</span>
+										}
+									</td>
+									<td class="py-3 pr-4">
+										<input name="checkHeaderSheet" value={ row.HeaderSheet } placeholder="Report or 2" class="w-full min-w-[10rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+									</td>
+									<td class="py-3 pr-4">
+										<input name="checkHeaderAnchor" value={ row.HeaderAnchor } class="w-full min-w-[12rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+									</td>
+									<td class="py-3 pr-4">
+										<select name="checkParentDirection" class="w-full min-w-[8rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm">
+											<option value="" selected?={ row.HeaderParentDirection == "" }>Select</option>
+											<option value="up" selected?={ row.HeaderParentDirection == "up" }>Up</option>
+											<option value="down" selected?={ row.HeaderParentDirection == "down" }>Down</option>
+											<option value="left" selected?={ row.HeaderParentDirection == "left" }>Left</option>
+											<option value="right" selected?={ row.HeaderParentDirection == "right" }>Right</option>
+										</select>
+									</td>
+									<td class="py-3 pr-4">
+										<input name="checkMaxHeaderDepth" value={ row.HeaderMaxDepth } class="w-full min-w-[6rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm"/>
+									</td>
+									<td class="py-3 pr-4">
+										<select name="checkRequireOrder" class="w-full min-w-[8rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm">
+											<option value="false" selected?={ !row.RequireOrder }>No</option>
+											<option value="true" selected?={ row.RequireOrder }>Yes</option>
+										</select>
+									</td>
+									<td class="py-3 pr-4">
+										if row.Status != "" {
+											<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
+										} else {
+											<span class="text-slate-400">Not run</span>
+										}
+									</td>
+									<td class="py-3 text-slate-600">
+										if row.Detail != "" {
+											{ row.Detail }
+										} else {
+											Old file is the baseline; new file is the comparison target.
 										}
 									</td>
 								</tr>
