@@ -6,8 +6,19 @@ func appShellExpression(activeTab string) string {
 	return fmt.Sprintf("appShell(%q)", activeTab)
 }
 
-func strategyStateExpression(strategy string) string {
-	return fmt.Sprintf(`{ strategy: %q }`, strategy)
+func strategyStateExpression(
+	strategy string,
+	referenceDate string,
+) string {
+	return fmt.Sprintf(
+		`{ strategy: %q, referenceDate: %q }`,
+		strategy,
+		referenceDate,
+	)
+}
+
+func transferPathFieldExpression(value string) string {
+	return fmt.Sprintf(`{ value: %q }`, value)
 }
 
 func saveMessageClasses(hasErrors bool) string {

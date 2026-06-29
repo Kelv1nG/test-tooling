@@ -2,6 +2,7 @@ package templates
 
 import (
 	"os"
+	"time"
 
 	"tooling/config"
 )
@@ -21,6 +22,7 @@ type PageData struct {
 	TransferRows      []TransferRowView
 	CheckRows         []CheckRowView
 	Strategy          string
+	ReferenceDate     string
 	TransferMessage   string
 	TransferHasErrors bool
 	TransferSummary   TransferSummaryView
@@ -68,18 +70,30 @@ type TransferSummaryView struct {
 
 func BuildTransferRows(
 	maps []config.FileTransferMap,
+	referenceDate time.Time,
 ) []TransferRowView {
 	rows := make([]TransferRowView, 0, len(maps))
 
 	for index, mapping := range maps {
-		rows = append(rows, TransferRowView{
-			Index:      index + 1,
-			ExcelRow:   mapping.ExcelRow,
-			Src:        mapping.Src,
-			SrcExists:  fileExistsOrFalse(mapping.Src),
-			Dest:       mapping.Dest,
-			DestExists: fileExistsOrFalse(mapping.Dest),
-		})
+		row := TransferRowView{
+			Index:    index + 1,
+			ExcelRow: mapping.ExcelRow,
+			Src:      mapping.Src,
+			Dest:     mapping.Dest,
+		}
+
+		resolved, err := config.ResolveFileTransferMap(mapping, referenceDate)
+		if err != nil {
+			row.Status = "Invalid template"
+			row.Badge = "rose"
+			row.Detail = err.Error()
+			rows = append(rows, row)
+			continue
+		}
+
+		row.SrcExists = fileExistsOrFalse(resolved.Src)
+		row.DestExists = fileExistsOrFalse(resolved.Dest)
+		rows = append(rows, row)
 	}
 
 	return rows

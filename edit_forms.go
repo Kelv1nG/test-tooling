@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"tooling/config"
 	"tooling/templates"
 )
 
-func parseTransferRowsForm(values map[string][]string) ([]templates.TransferRowView, error) {
+func parseTransferRowsForm(
+	values map[string][]string,
+	referenceDate time.Time,
+) ([]templates.TransferRowView, error) {
 	excelRows := values["transferExcelRow"]
 	srcs := values["transferSrc"]
 	dests := values["transferDest"]
@@ -22,7 +26,7 @@ func parseTransferRowsForm(values map[string][]string) ([]templates.TransferRowV
 		return nil, fmt.Errorf("submitted transfer rows were incomplete")
 	}
 
-	rows := make([]templates.TransferRowView, 0, len(srcs))
+	maps := make([]config.FileTransferMap, 0, len(srcs))
 	var errs config.ValidationErrors
 
 	for index := range srcs {
@@ -40,23 +44,40 @@ func parseTransferRowsForm(values map[string][]string) ([]templates.TransferRowV
 		src := strings.TrimSpace(srcs[index])
 		dest := strings.TrimSpace(dests[index])
 
-		rows = append(rows, templates.TransferRowView{
-			Index:      index + 1,
-			ExcelRow:   excelRow,
-			Src:        src,
-			SrcExists:  fileExistsOrFalse(src),
-			Dest:       dest,
-			DestExists: fileExistsOrFalse(dest),
+		maps = append(maps, config.FileTransferMap{
+			ExcelRow: excelRow,
+			Src:      src,
+			Dest:     dest,
 		})
 
 		if src == "" {
 			errs = append(errs, fmt.Errorf("transfer row %d requires a source path", index+1))
+		} else if err := config.ValidatePathTemplate(src); err != nil {
+			errs = append(
+				errs,
+				fmt.Errorf(
+					"transfer row %d has an invalid source path template: %v",
+					index+1,
+					err,
+				),
+			)
 		}
 
 		if dest == "" {
 			errs = append(errs, fmt.Errorf("transfer row %d requires a destination path", index+1))
+		} else if err := config.ValidatePathTemplate(dest); err != nil {
+			errs = append(
+				errs,
+				fmt.Errorf(
+					"transfer row %d has an invalid destination path template: %v",
+					index+1,
+					err,
+				),
+			)
 		}
 	}
+
+	rows := templates.BuildTransferRows(maps, referenceDate)
 
 	if len(errs) > 0 {
 		return rows, errs

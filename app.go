@@ -52,6 +52,7 @@ func (a *application) newPageData(
 		WorkbookPath:    workbookPath,
 		ActiveTab:       "configuration",
 		Strategy:        "overwrite",
+		ReferenceDate:   defaultReferenceDate(),
 	}
 }
 
@@ -72,6 +73,7 @@ func (a *application) pageDataFromRequest(
 
 	data := a.newPageData(definitionsPath, workbookPath)
 	data.Strategy = normalizeStrategy(request.FormValue("strategy"))
+	data.ReferenceDate = normalizeReferenceDate(request.FormValue("referenceDate"))
 	data.ActiveTab = normalizeTab(request.FormValue("activeTab"))
 	return data
 }
@@ -142,9 +144,14 @@ func (a *application) applyConfiguration(
 	data *templates.PageData,
 	configuration config.Configuration,
 ) {
+	referenceDate := referenceDateForDisplay(data.ReferenceDate)
+
 	data.HasConfig = true
 	data.LoadedAt = time.Now().Format(time.RFC1123)
-	data.TransferRows = templates.BuildTransferRows(configuration.FileTransferMaps)
+	data.TransferRows = templates.BuildTransferRows(
+		configuration.FileTransferMaps,
+		referenceDate,
+	)
 	data.CheckRows = templates.BuildCheckRows(configuration.FileCheckRules)
 	data.TransferCount = len(configuration.FileTransferMaps)
 	data.CheckCount = len(configuration.FileCheckRules)

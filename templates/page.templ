@@ -63,6 +63,53 @@ templ PageScripts() {
 	    activeTab: initialTab || "configuration"
 	  });
 
+	  window.transferTemplatePlaceholderPattern = /\{[^{}]+\}/;
+	  window.transferTemplatePlaceholderPatternGlobal = /\{[^{}]+\}/g;
+
+	  window.transferTemplateHasPlaceholder = (value) => {
+	    return window.transferTemplatePlaceholderPattern.test(value || "");
+	  };
+
+	  window.resolveTransferTemplate = (value, referenceDate) => {
+	    const input = value || "";
+	    const date = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
+	    if (Number.isNaN(date.getTime())) {
+	      return input;
+	    }
+
+	    const replacements = {
+	      yyyy: String(date.getFullYear()),
+	      yy: String(date.getFullYear()).slice(-2),
+	      mm: String(date.getMonth() + 1).padStart(2, "0"),
+	      m: String(date.getMonth() + 1),
+	      dd: String(date.getDate()).padStart(2, "0"),
+	      d: String(date.getDate()),
+	      MMMM: date.toLocaleString("en-US", { month: "long" }),
+	      mmmm: date.toLocaleString("en-US", { month: "long" }).toLowerCase(),
+	      MMM: date.toLocaleString("en-US", { month: "short" }),
+	      mmm: date.toLocaleString("en-US", { month: "short" }).toLowerCase()
+	    };
+
+	    return input.replace(window.transferTemplatePlaceholderPatternGlobal, (match) => {
+	      const token = match.slice(1, -1).trim();
+	      return replacements[token] ?? match;
+	    });
+	  };
+
+	  window.transferTemplateTokenValue = (token, referenceDate) => {
+	    const resolved = window.resolveTransferTemplate(`{${token}}`, referenceDate);
+	    return resolved === `{${token}}` ? "unsupported" : resolved;
+	  };
+
+	  window.transferTemplatePreview = (value, referenceDate) => {
+	    const resolved = window.resolveTransferTemplate(value, referenceDate);
+	    if (resolved === value) {
+	      return "Unsupported placeholder";
+	    }
+
+	    return `Resolves to: ${resolved}`;
+	  };
+
 	  window.refreshTransferRowNumbers = (root) => {
 	    root.querySelectorAll("[data-transfer-row-number]").forEach((node, index) => {
 	      node.textContent = String(index + 1);

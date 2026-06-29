@@ -73,7 +73,19 @@ func (a *application) handleTransfer(
 
 	a.applyConfiguration(&data, configuration)
 
-	results, summary := runTransfers(configuration, data.Strategy)
+	referenceDate, err := parseReferenceDate(data.ReferenceDate)
+	if err != nil {
+		data.TransferHasErrors = true
+		data.TransferMessage = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	results, summary := runTransfers(
+		configuration,
+		data.Strategy,
+		referenceDate,
+	)
 	data.TransferResults = results
 	data.TransferSummary = summary
 	data.TransferRows = applyTransferResultsToRows(
@@ -118,7 +130,15 @@ func (a *application) handleSaveTransfer(
 		return
 	}
 
-	rows, err := parseTransferRowsForm(request.Form)
+	referenceDate, err := parseReferenceDate(data.ReferenceDate)
+	if err != nil {
+		data.SaveHasErrors = true
+		data.SaveMessage = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	rows, err := parseTransferRowsForm(request.Form, referenceDate)
 	if len(rows) > 0 {
 		data.TransferRows = rows
 		data.TransferCount = len(rows)

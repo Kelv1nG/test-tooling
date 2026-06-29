@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"time"
 
 	"tooling/config"
 	"tooling/templates"
@@ -17,6 +18,7 @@ func applyTransferResultsToRows(
 func runTransfers(
 	configuration config.Configuration,
 	strategy string,
+	referenceDate time.Time,
 ) ([]templates.TransferResultView, templates.TransferSummaryView) {
 	results := make([]templates.TransferResultView, 0, len(configuration.FileTransferMaps))
 	var conflictStrategy FileConflictStrategy = OVERWRITE
@@ -36,7 +38,17 @@ func runTransfers(
 			Dest:  mapping.Dest,
 		}
 
-		result, err := copyFile(mapping.Src, mapping.Dest, conflictStrategy)
+		resolved, err := config.ResolveFileTransferMap(mapping, referenceDate)
+		if err != nil {
+			entry.Status = "Error"
+			entry.Badge = "rose"
+			entry.Detail = err.Error()
+			summary.Errors++
+			results = append(results, entry)
+			continue
+		}
+
+		result, err := copyFile(resolved.Src, resolved.Dest, conflictStrategy)
 		if err != nil {
 			entry.Status = "Error"
 			entry.Badge = "rose"
