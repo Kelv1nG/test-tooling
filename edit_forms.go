@@ -14,35 +14,35 @@ func parseTransferRowsForm(
 	values map[string][]string,
 	referenceDate time.Time,
 ) ([]templates.TransferRowView, error) {
-	excelRows := values["transferExcelRow"]
-	srcs := values["transferSrc"]
-	dests := values["transferDest"]
+	form := transferRowsForm{
+		excelRows: values["transferExcelRow"],
+		srcs:      values["transferSrc"],
+		dests:     values["transferDest"],
+	}
 
-	if len(excelRows) == 0 && len(srcs) == 0 && len(dests) == 0 {
+	if form.isEmpty() {
 		return nil, fmt.Errorf("no transfer rows were submitted")
 	}
 
-	if len(excelRows) != len(srcs) || len(srcs) != len(dests) {
+	if err := form.validateLengths(); err != nil {
 		return nil, fmt.Errorf("submitted transfer rows were incomplete")
 	}
 
-	maps := make([]config.FileTransferMap, 0, len(srcs))
+	maps := make([]config.FileTransferMap, 0, len(form.srcs))
 	var errs config.ValidationErrors
 
-	for index := range srcs {
-		excelRowText := strings.TrimSpace(excelRows[index])
-		excelRow := 0
-		if excelRowText != "" {
-			parsedRow, err := strconv.Atoi(excelRowText)
-			if err != nil {
-				errs = append(errs, fmt.Errorf("transfer row %d has an invalid workbook position", index+1))
-			} else {
-				excelRow = parsedRow
-			}
+	for index := range form.srcs {
+		excelRow, err := parseOptionalExcelRow(
+			form.excelRows[index],
+			index+1,
+			"transfer row",
+		)
+		if err != nil {
+			errs = append(errs, err)
 		}
 
-		src := strings.TrimSpace(srcs[index])
-		dest := strings.TrimSpace(dests[index])
+		src := strings.TrimSpace(form.srcs[index])
+		dest := strings.TrimSpace(form.dests[index])
 
 		maps = append(maps, config.FileTransferMap{
 			ExcelRow: excelRow,
@@ -50,34 +50,11 @@ func parseTransferRowsForm(
 			Dest:     dest,
 		})
 
-		if src == "" {
-			errs = append(errs, fmt.Errorf("transfer row %d requires a source path", index+1))
-		} else if err := config.ValidatePathTemplate(src); err != nil {
-			errs = append(
-				errs,
-				fmt.Errorf(
-					"transfer row %d has an invalid source path template: %v",
-					index+1,
-					err,
-				),
-			)
-		}
-
-		if dest == "" {
-			errs = append(errs, fmt.Errorf("transfer row %d requires a destination path", index+1))
-		} else if err := config.ValidatePathTemplate(dest); err != nil {
-			errs = append(
-				errs,
-				fmt.Errorf(
-					"transfer row %d has an invalid destination path template: %v",
-					index+1,
-					err,
-				),
-			)
-		}
+		errs = append(errs, validateTransferPath(src, index+1, "source")...)
+		errs = append(errs, validateTransferPath(dest, index+1, "destination")...)
 	}
 
-	rows := templates.BuildTransferRows(maps, referenceDate)
+	rows := buildTransferRows(maps, referenceDate)
 
 	if len(errs) > 0 {
 		return rows, errs
@@ -87,30 +64,35 @@ func parseTransferRowsForm(
 }
 
 func parseCheckRowsForm(values map[string][]string) ([]templates.CheckRowView, error) {
-	excelRows := values["checkExcelRow"]
-	newFiles := values["checkNewFile"]
-	oldFiles := values["checkOldFile"]
+	form := checkRowsForm{
+		excelRows: values["checkExcelRow"],
+		newFiles:  values["checkNewFile"],
+		oldFiles:  values["checkOldFile"],
+	}
 
-	if len(excelRows) == 0 && len(newFiles) == 0 && len(oldFiles) == 0 {
+	if form.isEmpty() {
 		return nil, fmt.Errorf("no check rows were submitted")
 	}
 
-	if len(excelRows) != len(newFiles) || len(newFiles) != len(oldFiles) {
+	if err := form.validateLengths(); err != nil {
 		return nil, fmt.Errorf("submitted check rows were incomplete")
 	}
 
-	rows := make([]templates.CheckRowView, 0, len(newFiles))
+	rows := make([]templates.CheckRowView, 0, len(form.newFiles))
 	var errs config.ValidationErrors
 
-	for index := range newFiles {
-		excelRow, err := strconv.Atoi(strings.TrimSpace(excelRows[index]))
+	for index := range form.newFiles {
+		excelRow, err := parseRequiredExcelRow(
+			form.excelRows[index],
+			index+1,
+			"check row",
+		)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("check row %d is missing its workbook position", index+1))
-			excelRow = 0
+			errs = append(errs, err)
 		}
 
-		newFile := strings.TrimSpace(newFiles[index])
-		oldFile := strings.TrimSpace(oldFiles[index])
+		newFile := strings.TrimSpace(form.newFiles[index])
+		oldFile := strings.TrimSpace(form.oldFiles[index])
 
 		rows = append(rows, templates.CheckRowView{
 			Index:     index + 1,
@@ -137,30 +119,92 @@ func parseCheckRowsForm(values map[string][]string) ([]templates.CheckRowView, e
 	return rows, nil
 }
 
-func buildTransferMappingsFromRows(rows []templates.TransferRowView) []config.FileTransferMap {
-	maps := make([]config.FileTransferMap, 0, len(rows))
-
-	for _, row := range rows {
-		maps = append(maps, config.FileTransferMap{
-			ExcelRow: row.ExcelRow,
-			Src:      row.Src,
-			Dest:     row.Dest,
-		})
-	}
-
-	return maps
+type transferRowsForm struct {
+	excelRows []string
+	srcs      []string
+	dests     []string
 }
 
-func buildCheckRulesFromRows(rows []templates.CheckRowView) []config.FileCheckRule {
-	rules := make([]config.FileCheckRule, 0, len(rows))
+func (f transferRowsForm) isEmpty() bool {
+	return len(f.excelRows) == 0 && len(f.srcs) == 0 && len(f.dests) == 0
+}
 
-	for _, row := range rows {
-		rules = append(rules, config.FileCheckRule{
-			ExcelRow: row.ExcelRow,
-			NewFile:  row.NewFile,
-			OldFile:  row.OldFile,
-		})
+func (f transferRowsForm) validateLengths() error {
+	if len(f.excelRows) != len(f.srcs) || len(f.srcs) != len(f.dests) {
+		return fmt.Errorf("mismatched transfer row fields")
 	}
 
-	return rules
+	return nil
+}
+
+type checkRowsForm struct {
+	excelRows []string
+	newFiles  []string
+	oldFiles  []string
+}
+
+func (f checkRowsForm) isEmpty() bool {
+	return len(f.excelRows) == 0 && len(f.newFiles) == 0 && len(f.oldFiles) == 0
+}
+
+func (f checkRowsForm) validateLengths() error {
+	if len(f.excelRows) != len(f.newFiles) || len(f.newFiles) != len(f.oldFiles) {
+		return fmt.Errorf("mismatched check row fields")
+	}
+
+	return nil
+}
+
+func parseOptionalExcelRow(
+	value string,
+	rowIndex int,
+	rowLabel string,
+) (int, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return 0, nil
+	}
+
+	row, err := strconv.Atoi(trimmed)
+	if err != nil {
+		return 0, fmt.Errorf("%s %d has an invalid workbook position", rowLabel, rowIndex)
+	}
+
+	return row, nil
+}
+
+func parseRequiredExcelRow(
+	value string,
+	rowIndex int,
+	rowLabel string,
+) (int, error) {
+	row, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil {
+		return 0, fmt.Errorf("%s %d is missing its workbook position", rowLabel, rowIndex)
+	}
+
+	return row, nil
+}
+
+func validateTransferPath(
+	value string,
+	rowIndex int,
+	field string,
+) []error {
+	if value == "" {
+		return []error{fmt.Errorf("transfer row %d requires a %s path", rowIndex, field)}
+	}
+
+	if err := config.ValidatePathTemplate(value); err != nil {
+		return []error{
+			fmt.Errorf(
+				"transfer row %d has an invalid %s path template: %v",
+				rowIndex,
+				field,
+				err,
+			),
+		}
+	}
+
+	return nil
 }

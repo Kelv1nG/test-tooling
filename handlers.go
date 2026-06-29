@@ -9,8 +9,7 @@ func (a *application) handleIndex(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	if request.Method != http.MethodGet {
-		http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+	if !allowMethod(writer, request, http.MethodGet) {
 		return
 	}
 
@@ -33,20 +32,19 @@ func (a *application) handleLoad(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	if request.Method != http.MethodPost {
-		http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+	if !allowMethod(writer, request, http.MethodPost) {
 		return
 	}
 
-	data := a.pageDataFromRequest(request)
-	if err := a.populateConfigData(&data); err != nil {
+	data, _, err := a.configuredPageDataFromRequest(request, tabConfiguration)
+	if err != nil {
+		data = a.pageDataFromRequest(request)
 		data.LoadError = err.Error()
-		data.ActiveTab = "configuration"
+		data.ActiveTab = tabConfiguration
 		a.renderResponse(writer, request, data, http.StatusBadRequest)
 		return
 	}
 
-	data.ActiveTab = "configuration"
 	a.renderResponse(writer, request, data, http.StatusOK)
 }
 
@@ -54,24 +52,19 @@ func (a *application) handleTransfer(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	if request.Method != http.MethodPost {
-		http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+	if !allowMethod(writer, request, http.MethodPost) {
 		return
 	}
 
-	data := a.pageDataFromRequest(request)
-	data.ActiveTab = "file-transfer"
-	configuration, err := a.loadConfiguration(
-		data.DefinitionsPath,
-		data.WorkbookPath,
+	data, configuration, err := a.configuredPageDataFromRequest(
+		request,
+		tabFileTransfer,
 	)
 	if err != nil {
 		data.LoadError = err.Error()
 		a.renderResponse(writer, request, data, http.StatusBadRequest)
 		return
 	}
-
-	a.applyConfiguration(&data, configuration)
 
 	referenceDate, err := parseReferenceDate(data.ReferenceDate)
 	if err != nil {
@@ -81,11 +74,11 @@ func (a *application) handleTransfer(
 		return
 	}
 
-	results, summary := runTransfers(
-		configuration,
-		data.Strategy,
+	runner := newTransferRunner(
+		parseTransferMode(data.Strategy),
 		referenceDate,
 	)
+	results, summary := runner.run(configuration.FileTransferMaps)
 	data.TransferResults = results
 	data.TransferSummary = summary
 	data.TransferRows = applyTransferResultsToRows(
@@ -116,13 +109,12 @@ func (a *application) handleSaveTransfer(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	if request.Method != http.MethodPost {
-		http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+	if !allowMethod(writer, request, http.MethodPost) {
 		return
 	}
 
 	data := a.pageDataFromRequest(request)
-	data.ActiveTab = "file-transfer"
+	data.ActiveTab = tabFileTransfer
 
 	if err := a.populateConfigData(&data); err != nil {
 		data.LoadError = err.Error()
@@ -173,13 +165,12 @@ func (a *application) handleSaveChecks(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	if request.Method != http.MethodPost {
-		http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+	if !allowMethod(writer, request, http.MethodPost) {
 		return
 	}
 
 	data := a.pageDataFromRequest(request)
-	data.ActiveTab = "checking"
+	data.ActiveTab = tabChecking
 
 	if err := a.populateConfigData(&data); err != nil {
 		data.LoadError = err.Error()

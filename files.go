@@ -8,23 +8,27 @@ import (
 	"path/filepath"
 )
 
-type FileConflictStrategy int
+type conflictStrategy int
 
 const (
-	OVERWRITE = iota
-	SKIP
+	conflictStrategyOverwrite conflictStrategy = iota
+	conflictStrategySkip
 )
 
-type CopyResult int
+type copyOutcome int
 
 const (
-	CopyResultUnknown = iota
-	CopyResultCreated
-	CopyResultSkipped
-	CopyResultOverwritten
+	copyOutcomeUnknown copyOutcome = iota
+	copyOutcomeCreated
+	copyOutcomeSkipped
+	copyOutcomeOverwritten
 )
 
-func copyFile(src, dest string, strategy FileConflictStrategy) (CopyResult, error) {
+func copyFile(
+	src string,
+	dest string,
+	strategy conflictStrategy,
+) (copyOutcome, error) {
 	srcExists, err := fileExists(src)
 	if err != nil {
 		return 0, err
@@ -40,20 +44,20 @@ func copyFile(src, dest string, strategy FileConflictStrategy) (CopyResult, erro
 
 	if destExists {
 		switch strategy {
-		case OVERWRITE:
+		case conflictStrategyOverwrite:
 			if err := writeCopy(src, dest); err != nil {
 				return 0, err
 			}
-			return CopyResultOverwritten, nil
-		case SKIP:
-			return CopyResultSkipped, nil
+			return copyOutcomeOverwritten, nil
+		case conflictStrategySkip:
+			return copyOutcomeSkipped, nil
 		}
 	}
 
 	if err := writeCopy(src, dest); err != nil {
 		return 0, err
 	}
-	return CopyResultCreated, nil
+	return copyOutcomeCreated, nil
 }
 
 func writeCopy(src, dest string) error {
@@ -96,4 +100,22 @@ func fileExists(path string) (bool, error) {
 	}
 
 	return false, err
+}
+
+func fileExistsOrFalse(path string) bool {
+	exists, err := fileExists(path)
+	return err == nil && exists
+}
+
+func (o copyOutcome) presentation() (status string, badge string, detail string) {
+	switch o {
+	case copyOutcomeCreated:
+		return "Created", "emerald", "Destination file created."
+	case copyOutcomeOverwritten:
+		return "Overwritten", "amber", "Existing destination file replaced."
+	case copyOutcomeSkipped:
+		return "Skipped", "slate", "Destination already existed."
+	default:
+		return "Unknown", "zinc", "Copy result did not map to a known status."
+	}
 }
