@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strconv"
@@ -38,7 +39,7 @@ func (l *Loader) SaveTransferWorkbook(
 
 func (l *Loader) SaveCheckWorkbook(
 	path string,
-	rules []FileCheckRule,
+	configs []FileCheckConfig,
 ) error {
 	if l == nil {
 		return fmt.Errorf("configuration loader is nil")
@@ -50,7 +51,7 @@ func (l *Loader) SaveCheckWorkbook(
 	}
 	defer file.Close()
 
-	if err := l.definitions.FileCheck.save(file, rules); err != nil {
+	if err := l.definitions.FileCheck.save(file, configs); err != nil {
 		return err
 	}
 
@@ -197,102 +198,63 @@ func (d FileTransferTableDefinition) save(
 
 func (d FileCheckTableDefinition) save(
 	file *excelize.File,
-	rules []FileCheckRule,
+	configs []FileCheckConfig,
 ) error {
-	headers, err := sheetHeaders(file, d.Sheet)
-	if err != nil {
+	if err := d.validateConfigs(configs); err != nil {
 		return err
 	}
 
-	newFileCol, err := requireColumn(headers, d.NewFileCol)
-	if err != nil {
-		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	if err := d.writeConfigs(file, configs); err != nil {
+		return err
 	}
 
-	oldFileCol, err := requireColumn(headers, d.OldFileCol)
-	if err != nil {
-		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	if err := d.Rules.writeRules(file, configs); err != nil {
+		return err
 	}
 
-	headerSheetCol, anchorCol, parentDirectionCol, maxHeaderDepthCol, requireOrderCol, columnErrs := d.headerCheckColumns(headers)
-	if len(columnErrs) > 0 {
-		return ValidationErrors(columnErrs)
-	}
+	return nil
+}
 
+func (d FileCheckTableDefinition) validateConfigs(
+	configs []FileCheckConfig,
+) error {
 	var errs ValidationErrors
+	seenIDs := make(map[string]struct{}, len(configs))
 
-	for _, rule := range rules {
-		newFile := strings.TrimSpace(rule.NewFile)
-		oldFile := strings.TrimSpace(rule.OldFile)
+	for index, check := range configs {
+		rowNumber := index + 1
+		id := strings.TrimSpace(check.ID)
+		newFile := strings.TrimSpace(check.NewFile)
+		oldFile := strings.TrimSpace(check.OldFile)
 
-		if rule.ExcelRow < 2 {
-			errs = append(errs, fmt.Errorf("sheet %q: invalid excel row %d", d.Sheet, rule.ExcelRow))
-			continue
+		if id == "" {
+			errs = append(errs, fmt.Errorf("check config %d requires a check id", rowNumber))
+		} else if _, exists := seenIDs[id]; exists {
+			errs = append(errs, fmt.Errorf("check config %d has duplicate check id %q", rowNumber, id))
+		} else {
+			seenIDs[id] = struct{}{}
 		}
 
 		if newFile == "" {
-			errs = append(errs, fmt.Errorf("sheet %q, row %d: column %q is required", d.Sheet, rule.ExcelRow, d.NewFileCol))
+			errs = append(errs, fmt.Errorf("check config %d requires a new file path", rowNumber))
+		}
+		if check.requiresOldFile() && oldFile == "" {
+			errs = append(errs, fmt.Errorf("check config %d requires an old file path because it has a header comparison rule", rowNumber))
 		}
 
-		if oldFile == "" {
-			errs = append(errs, fmt.Errorf("sheet %q, row %d: column %q is required", d.Sheet, rule.ExcelRow, d.OldFileCol))
-		}
-
-		if newFile == "" || oldFile == "" {
-			continue
-		}
-
-		if err := validateHeaderCheckConfig(d, rule); err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
-		newFileCell, err := excelize.CoordinatesToCellName(newFileCol+1, rule.ExcelRow)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("sheet %q, row %d: resolve new file cell: %w", d.Sheet, rule.ExcelRow, err))
-			continue
-		}
-
-		oldFileCell, err := excelize.CoordinatesToCellName(oldFileCol+1, rule.ExcelRow)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("sheet %q, row %d: resolve old file cell: %w", d.Sheet, rule.ExcelRow, err))
-			continue
-		}
-
-		if err := file.SetCellStr(d.Sheet, newFileCell, newFile); err != nil {
-			errs = append(errs, fmt.Errorf("sheet %q, cell %s: %w", d.Sheet, newFileCell, err))
-		}
-
-		if err := file.SetCellStr(d.Sheet, oldFileCell, oldFile); err != nil {
-			errs = append(errs, fmt.Errorf("sheet %q, cell %s: %w", d.Sheet, oldFileCell, err))
-		}
-
-		if d.hasHeaderCheckColumns() {
-			if err := setOptionalStringCell(file, d.Sheet, headerSheetCol, rule.ExcelRow, rule.HeaderCheck.Sheet); err != nil {
+		seenRuleIDs := make(map[string]struct{}, len(check.Rules))
+		for ruleIndex, rule := range check.Rules {
+			if err := validateVerificationRule(check.ID, ruleIndex+1, rule); err != nil {
 				errs = append(errs, err)
 			}
-			if err := setOptionalStringCell(file, d.Sheet, anchorCol, rule.ExcelRow, rule.HeaderCheck.Anchor); err != nil {
-				errs = append(errs, err)
+			if rule.ID == "" {
+				continue
 			}
-			if err := setOptionalStringCell(file, d.Sheet, parentDirectionCol, rule.ExcelRow, rule.HeaderCheck.ParentDirection); err != nil {
-				errs = append(errs, err)
+			if _, exists := seenRuleIDs[rule.ID]; exists {
+				errs = append(errs, fmt.Errorf("check config %q has duplicate rule id %q", check.ID, rule.ID))
+				continue
 			}
-
-			maxDepthValue := ""
-			if rule.HeaderCheck.MaxHeaderDepth > 0 {
-				maxDepthValue = strconv.Itoa(rule.HeaderCheck.MaxHeaderDepth)
-			}
-			if err := setOptionalStringCell(file, d.Sheet, maxHeaderDepthCol, rule.ExcelRow, maxDepthValue); err != nil {
-				errs = append(errs, err)
-			}
-
-			requireOrderValue := ""
-			if rule.HeaderCheck.hasValues() {
-				requireOrderValue = strconv.FormatBool(rule.HeaderCheck.RequireOrder)
-			}
-			if err := setOptionalStringCell(file, d.Sheet, requireOrderCol, rule.ExcelRow, requireOrderValue); err != nil {
-				errs = append(errs, err)
-			}
+			seenRuleIDs[rule.ID] = struct{}{}
 		}
 	}
 
@@ -303,34 +265,222 @@ func (d FileCheckTableDefinition) save(
 	return nil
 }
 
-func validateHeaderCheckConfig(
-	definition FileCheckTableDefinition,
-	rule FileCheckRule,
+func validateVerificationRule(
+	checkID string,
+	ruleIndex int,
+	rule VerificationRule,
 ) error {
-	if !definition.hasHeaderCheckColumns() || !rule.HeaderCheck.hasValues() {
-		return nil
+	var errs ValidationErrors
+
+	if strings.TrimSpace(rule.ID) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires a rule id", checkID, ruleIndex))
+	}
+	if !rule.Type.valid() {
+		errs = append(errs, fmt.Errorf("check config %q rule %d has invalid rule type %q", checkID, ruleIndex, rule.Type))
 	}
 
-	if strings.TrimSpace(rule.HeaderCheck.Sheet) == "" {
-		return fmt.Errorf("sheet %q, row %d: column %q is required when header verification is configured", definition.Sheet, rule.ExcelRow, definition.HeaderSheetCol)
+	switch rule.Type {
+	case VerificationRuleTypeHeaderCompare:
+		errs = append(errs, validateHeaderCompareRule(checkID, ruleIndex, rule.HeaderCompare)...)
+	case VerificationRuleTypeExactText:
+		errs = append(errs, validateExactTextRule(checkID, ruleIndex, rule.ExactText)...)
 	}
 
-	if strings.TrimSpace(rule.HeaderCheck.Anchor) == "" {
-		return fmt.Errorf("sheet %q, row %d: column %q is required when header verification is configured", definition.Sheet, rule.ExcelRow, definition.AnchorCol)
-	}
-
-	if !headersearch.Direction(rule.HeaderCheck.ParentDirection).Valid() {
-		return fmt.Errorf("sheet %q, row %d: column %q must be one of up, down, left, right", definition.Sheet, rule.ExcelRow, definition.ParentDirectionCol)
-	}
-
-	if rule.HeaderCheck.MaxHeaderDepth < 1 {
-		return fmt.Errorf("sheet %q, row %d: column %q must be a whole number greater than 0", definition.Sheet, rule.ExcelRow, definition.MaxHeaderDepthCol)
+	if len(errs) > 0 {
+		return errs
 	}
 
 	return nil
 }
 
-func setOptionalStringCell(
+func validateHeaderCompareRule(
+	checkID string,
+	ruleIndex int,
+	rule HeaderCheckConfig,
+) []error {
+	var errs []error
+
+	if strings.TrimSpace(rule.Sheet) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires a sheet", checkID, ruleIndex))
+	}
+	if strings.TrimSpace(rule.Anchor) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires an anchor", checkID, ruleIndex))
+	}
+	if !headersearch.Direction(rule.ParentDirection).Valid() {
+		errs = append(errs, fmt.Errorf("check config %q rule %d direction must be one of up, down, left, right", checkID, ruleIndex))
+	}
+	if rule.MaxHeaderDepth < 1 {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires max depth greater than 0", checkID, ruleIndex))
+	}
+
+	return errs
+}
+
+func validateExactTextRule(
+	checkID string,
+	ruleIndex int,
+	rule ExactMatchCheckConfig,
+) []error {
+	var errs []error
+
+	if strings.TrimSpace(rule.Sheet) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires a sheet", checkID, ruleIndex))
+	}
+	if strings.TrimSpace(rule.ExpectedText) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires expected text", checkID, ruleIndex))
+	} else if err := ValidateTemplateText(rule.ExpectedText); err != nil {
+		errs = append(errs, fmt.Errorf("check config %q rule %d has invalid expected-text template: %v", checkID, ruleIndex, err))
+	}
+
+	return errs
+}
+
+func (d FileCheckTableDefinition) writeConfigs(
+	file *excelize.File,
+	configs []FileCheckConfig,
+) error {
+	headers, err := sheetHeaders(file, d.Sheet)
+	if err != nil {
+		return err
+	}
+
+	idCol, err := requireColumn(headers, d.IDCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+	newFileCol, err := requireColumn(headers, d.NewFileCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+	oldFileCol, err := requireColumn(headers, d.OldFileCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+
+	if err := clearDataRows(file, d.Sheet); err != nil {
+		return err
+	}
+
+	var errs ValidationErrors
+	for index, check := range configs {
+		row := index + 2
+		if err := setStringCell(file, d.Sheet, idCol, row, check.ID); err != nil {
+			errs = append(errs, err)
+		}
+		if err := setStringCell(file, d.Sheet, newFileCol, row, check.NewFile); err != nil {
+			errs = append(errs, err)
+		}
+		if err := setStringCell(file, d.Sheet, oldFileCol, row, check.OldFile); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	return nil
+}
+
+func (d FileCheckRulesTableDefinition) writeRules(
+	file *excelize.File,
+	configs []FileCheckConfig,
+) error {
+	headers, err := sheetHeaders(file, d.Sheet)
+	if err != nil {
+		return err
+	}
+
+	checkIDCol, err := requireColumn(headers, d.CheckIDCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+	ruleIDCol, err := requireColumn(headers, d.RuleIDCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+	ruleNameCol, err := requireColumn(headers, d.RuleNameCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+	ruleTypeCol, err := requireColumn(headers, d.RuleTypeCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+	enabledCol, err := requireColumn(headers, d.EnabledCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+	configCol, err := requireColumn(headers, d.ConfigCol)
+	if err != nil {
+		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
+	}
+
+	if err := clearDataRows(file, d.Sheet); err != nil {
+		return err
+	}
+
+	var errs ValidationErrors
+	targetRow := 2
+	for _, check := range configs {
+		for _, rule := range check.Rules {
+			ruleConfig, err := marshalRuleConfig(rule)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("sheet %q, row %d: %w", d.Sheet, targetRow, err))
+				targetRow++
+				continue
+			}
+
+			if err := setStringCell(file, d.Sheet, checkIDCol, targetRow, check.ID); err != nil {
+				errs = append(errs, err)
+			}
+			if err := setStringCell(file, d.Sheet, ruleIDCol, targetRow, rule.ID); err != nil {
+				errs = append(errs, err)
+			}
+			if err := setStringCell(file, d.Sheet, ruleNameCol, targetRow, rule.Name); err != nil {
+				errs = append(errs, err)
+			}
+			if err := setStringCell(file, d.Sheet, ruleTypeCol, targetRow, string(rule.Type)); err != nil {
+				errs = append(errs, err)
+			}
+			if err := setStringCell(file, d.Sheet, enabledCol, targetRow, strconv.FormatBool(rule.Enabled)); err != nil {
+				errs = append(errs, err)
+			}
+			if err := setStringCell(file, d.Sheet, configCol, targetRow, ruleConfig); err != nil {
+				errs = append(errs, err)
+			}
+
+			targetRow++
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	return nil
+}
+
+func marshalRuleConfig(rule VerificationRule) (string, error) {
+	var payload any
+	switch rule.Type {
+	case VerificationRuleTypeHeaderCompare:
+		payload = rule.HeaderCompare
+	case VerificationRuleTypeExactText:
+		payload = rule.ExactText
+	default:
+		return "", fmt.Errorf("unsupported rule type %q", rule.Type)
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("marshal rule config: %w", err)
+	}
+
+	return string(data), nil
+}
+
+func setStringCell(
 	file *excelize.File,
 	sheet string,
 	column int,
@@ -339,11 +489,27 @@ func setOptionalStringCell(
 ) error {
 	cell, err := excelize.CoordinatesToCellName(column+1, row)
 	if err != nil {
-		return fmt.Errorf("sheet %q, row %d: resolve optional cell: %w", sheet, row, err)
+		return fmt.Errorf("sheet %q, row %d: resolve cell: %w", sheet, row, err)
 	}
-
 	if err := file.SetCellStr(sheet, cell, value); err != nil {
 		return fmt.Errorf("sheet %q, cell %s: %w", sheet, cell, err)
+	}
+	return nil
+}
+
+func clearDataRows(
+	file *excelize.File,
+	sheet string,
+) error {
+	rows, err := file.GetRows(sheet)
+	if err != nil {
+		return fmt.Errorf("read sheet %q: %w", sheet, err)
+	}
+
+	for row := len(rows); row >= 2; row-- {
+		if err := file.RemoveRow(sheet, row); err != nil {
+			return fmt.Errorf("sheet %q: remove row %d: %w", sheet, row, err)
+		}
 	}
 
 	return nil
@@ -355,6 +521,29 @@ func (c HeaderCheckConfig) hasValues() bool {
 		strings.TrimSpace(c.ParentDirection) != "" ||
 		c.MaxHeaderDepth > 0 ||
 		c.RequireOrder
+}
+
+func (c ExactMatchCheckConfig) hasValues() bool {
+	return strings.TrimSpace(c.Sheet) != "" ||
+		strings.TrimSpace(c.ExpectedText) != ""
+}
+
+func (t VerificationRuleType) valid() bool {
+	return t == VerificationRuleTypeHeaderCompare || t == VerificationRuleTypeExactText
+}
+
+func (r VerificationRule) requiresOldFile() bool {
+	return r.Enabled && r.Type == VerificationRuleTypeHeaderCompare
+}
+
+func (c FileCheckConfig) requiresOldFile() bool {
+	for _, rule := range c.Rules {
+		if rule.requiresOldFile() {
+			return true
+		}
+	}
+
+	return false
 }
 
 func sheetHeaders(

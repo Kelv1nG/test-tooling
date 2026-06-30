@@ -54,7 +54,7 @@ func (l *Loader) Load(
 
 	transferMaps, transferErr := l.definitions.FileTransfer.read(file)
 
-	checkRules, checkErr := l.definitions.FileCheck.read(file)
+	checkConfigs, checkErr := l.definitions.FileCheck.read(file)
 
 	var errs ValidationErrors
 
@@ -72,6 +72,6 @@ func (l *Loader) Load(
 
 	return Configuration{
 		FileTransferMaps: transferMaps,
-		FileCheckRules:   checkRules,
+		FileCheckConfigs: checkConfigs,
 	}, nil
 }

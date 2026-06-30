@@ -12,12 +12,19 @@ type FileTransferTableDefinition struct {
 }
 
 type FileCheckTableDefinition struct {
-	Sheet              string `yaml:"sheet"`
-	NewFileCol         string `yaml:"new_file_column"`
-	OldFileCol         string `yaml:"old_file_column"`
-	HeaderSheetCol     string `yaml:"header_sheet_column"`
-	AnchorCol          string `yaml:"anchor_column"`
-	ParentDirectionCol string `yaml:"parent_direction_column"`
-	MaxHeaderDepthCol  string `yaml:"max_header_depth_column"`
-	RequireOrderCol    string `yaml:"require_order_column"`
+	Sheet      string                        `yaml:"sheet"`
+	IDCol      string                        `yaml:"id_column"`
+	NewFileCol string                        `yaml:"new_file_column"`
+	OldFileCol string                        `yaml:"old_file_column"`
+	Rules      FileCheckRulesTableDefinition `yaml:"rules"`
+}
+
+type FileCheckRulesTableDefinition struct {
+	Sheet       string `yaml:"sheet"`
+	CheckIDCol  string `yaml:"check_id_column"`
+	RuleIDCol   string `yaml:"rule_id_column"`
+	RuleNameCol string `yaml:"rule_name_column"`
+	RuleTypeCol string `yaml:"rule_type_column"`
+	EnabledCol  string `yaml:"enabled_column"`
+	ConfigCol   string `yaml:"config_column"`
 }

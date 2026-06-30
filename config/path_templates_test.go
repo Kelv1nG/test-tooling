@@ -30,3 +30,20 @@ func TestResolvePathTemplateRejectsUnsupportedPlaceholder(t *testing.T) {
 		t.Fatal("ResolvePathTemplate returned nil error for unsupported placeholder")
 	}
 }
+
+func TestResolveTemplateText(t *testing.T) {
+	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
+
+	resolved, err := ResolveTemplateText(
+		`Actual performance from 10/5/2021 to {mm}/{dd}/{yy}`,
+		referenceDate,
+	)
+	if err != nil {
+		t.Fatalf("ResolveTemplateText returned error: %v", err)
+	}
+
+	const expected = "Actual performance from 10/5/2021 to 06/30/26"
+	if resolved != expected {
+		t.Fatalf("ResolveTemplateText = %q, want %q", resolved, expected)
+	}
+}

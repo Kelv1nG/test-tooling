@@ -178,7 +178,15 @@ func (a *application) handleSaveChecks(
 		return
 	}
 
-	rows, err := parseCheckRowsForm(request.Form)
+	referenceDate, err := parseReferenceDate(data.CheckReferenceDate)
+	if err != nil {
+		data.SaveHasErrors = true
+		data.SaveMessage = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	rows, err := parseCheckRowsForm(request.Form, referenceDate)
 	if len(rows) > 0 {
 		data.CheckRows = rows
 		data.CheckCount = len(rows)
@@ -205,7 +213,7 @@ func (a *application) handleSaveChecks(
 		return
 	}
 
-	data.SaveMessage = fmt.Sprintf("Saved %d check row(s) to the workbook.", len(rows))
+	data.SaveMessage = fmt.Sprintf("Saved %d check config(s) to the workbook.", len(rows))
 	a.renderResponse(writer, request, data, http.StatusOK)
 }
 
@@ -226,7 +234,15 @@ func (a *application) handleVerifyChecks(
 		return
 	}
 
-	rows, err := parseCheckRowsForm(request.Form)
+	referenceDate, err := parseReferenceDate(data.CheckReferenceDate)
+	if err != nil {
+		data.CheckHasIssues = true
+		data.CheckMessage = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	rows, err := parseCheckRowsForm(request.Form, referenceDate)
 	if len(rows) > 0 {
 		data.CheckRows = rows
 		data.CheckCount = len(rows)
@@ -239,10 +255,10 @@ func (a *application) handleVerifyChecks(
 		return
 	}
 
-	data.CheckRows, data.CheckSummary = runCheckVerification(data.CheckRows)
+	data.CheckRows, data.CheckSummary = runCheckVerification(data.CheckRows, referenceDate)
 	data.CheckHasIssues = data.CheckSummary.Changed > 0 || data.CheckSummary.Errors > 0
 	data.CheckMessage = fmt.Sprintf(
-		"Verification checked %d row(s): matched %d, changed %d, errors %d, skipped %d.",
+		"Verification checked %d rule(s): matched %d, changed %d, errors %d, skipped %d.",
 		data.CheckSummary.Attempted,
 		data.CheckSummary.Matched,
 		data.CheckSummary.Changed,

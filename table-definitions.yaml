@@ -5,5 +5,14 @@ file_transfer:
 
 file_check:
   sheet: File Checks
+  id_column: Check ID
   new_file_column: New File
   old_file_column: Old File
+  rules:
+    sheet: File Check Rules
+    check_id_column: Check ID
+    rule_id_column: Rule ID
+    rule_name_column: Rule Name
+    rule_type_column: Rule Type
+    enabled_column: Enabled
+    config_column: Rule Config

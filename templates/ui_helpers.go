@@ -21,6 +21,18 @@ func transferPathFieldExpression(value string) string {
 	return fmt.Sprintf(`{ value: %q }`, value)
 }
 
+func referenceDateStateExpression(referenceDate string) string {
+	return fmt.Sprintf(`{ referenceDate: %q }`, referenceDate)
+}
+
+func ruleTypeStateExpression(ruleType string) string {
+	if ruleType == "" {
+		ruleType = "exact_text"
+	}
+
+	return fmt.Sprintf(`{ ruleType: %q }`, ruleType)
+}
+
 func saveMessageClasses(hasErrors bool) string {
 	if hasErrors {
 		return "rounded-[1.5rem] border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700"

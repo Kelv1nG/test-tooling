@@ -2,7 +2,7 @@ package config
 
 type Configuration struct {
 	FileTransferMaps []FileTransferMap
-	FileCheckRules   []FileCheckRule
+	FileCheckConfigs []FileCheckConfig
 }
 
 type FileTransferMap struct {
@@ -11,17 +11,41 @@ type FileTransferMap struct {
 	Dest     string
 }
 
-type FileCheckRule struct {
-	ExcelRow    int
-	NewFile     string
-	OldFile     string
-	HeaderCheck HeaderCheckConfig
+type FileCheckConfig struct {
+	ExcelRow int
+	ID       string
+	NewFile  string
+	OldFile  string
+	Rules    []VerificationRule
+}
+
+type VerificationRuleType string
+
+const (
+	VerificationRuleTypeHeaderCompare VerificationRuleType = "header_compare"
+	VerificationRuleTypeExactText     VerificationRuleType = "exact_text"
+)
+
+type VerificationRule struct {
+	ExcelRow      int
+	ID            string
+	CheckID       string
+	Name          string
+	Type          VerificationRuleType
+	Enabled       bool
+	HeaderCompare HeaderCheckConfig
+	ExactText     ExactMatchCheckConfig
 }
 
 type HeaderCheckConfig struct {
-	Sheet           string
-	Anchor          string
-	ParentDirection string
-	MaxHeaderDepth  int
-	RequireOrder    bool
+	Sheet           string `json:"sheet"`
+	Anchor          string `json:"anchor"`
+	ParentDirection string `json:"parent_direction"`
+	MaxHeaderDepth  int    `json:"max_header_depth"`
+	RequireOrder    bool   `json:"require_order"`
+}
+
+type ExactMatchCheckConfig struct {
+	Sheet        string `json:"sheet"`
+	ExpectedText string `json:"expected_text"`
 }

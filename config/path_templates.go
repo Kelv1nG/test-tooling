@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var fileTransferPlaceholderPattern = regexp.MustCompile(`\{[^{}]+\}`)
+var templatePlaceholderPattern = regexp.MustCompile(`\{[^{}]+\}`)
 
 type ResolvedFileTransferMap struct {
 	Src  string
@@ -47,9 +47,16 @@ func ResolvePathTemplate(
 	value string,
 	referenceDate time.Time,
 ) (string, error) {
+	return ResolveTemplateText(value, referenceDate)
+}
+
+func ResolveTemplateText(
+	value string,
+	referenceDate time.Time,
+) (string, error) {
 	var errs ValidationErrors
 
-	resolved := fileTransferPlaceholderPattern.ReplaceAllStringFunc(
+	resolved := templatePlaceholderPattern.ReplaceAllStringFunc(
 		value,
 		func(match string) string {
 			token := strings.TrimSpace(
@@ -59,7 +66,7 @@ func ResolvePathTemplate(
 				),
 			)
 
-			replacement, ok := fileTransferPlaceholderValue(token, referenceDate)
+			replacement, ok := templatePlaceholderValue(token, referenceDate)
 			if !ok {
 				errs = append(errs, fmt.Errorf("unsupported placeholder %q", match))
 				return match
@@ -77,14 +84,18 @@ func ResolvePathTemplate(
 }
 
 func ValidatePathTemplate(value string) error {
-	_, err := ResolvePathTemplate(
+	return ValidateTemplateText(value)
+}
+
+func ValidateTemplateText(value string) error {
+	_, err := ResolveTemplateText(
 		value,
 		time.Date(2026, time.February, 3, 0, 0, 0, 0, time.UTC),
 	)
 	return err
 }
 
-func fileTransferPlaceholderValue(
+func templatePlaceholderValue(
 	token string,
 	referenceDate time.Time,
 ) (string, bool) {

@@ -20,12 +20,13 @@ func (a *application) newPageData(
 	workbookPath string,
 ) templates.PageData {
 	return templates.PageData{
-		ListenAddr:      a.listenAddr,
-		DefinitionsPath: definitionsPath,
-		WorkbookPath:    workbookPath,
-		ActiveTab:       tabConfiguration,
-		Strategy:        string(defaultTransferMode),
-		ReferenceDate:   defaultReferenceDate(),
+		ListenAddr:         a.listenAddr,
+		DefinitionsPath:    definitionsPath,
+		WorkbookPath:       workbookPath,
+		ActiveTab:          tabConfiguration,
+		Strategy:           string(defaultTransferMode),
+		ReferenceDate:      defaultReferenceDate(),
+		CheckReferenceDate: defaultReferenceDate(),
 	}
 }
 
@@ -49,6 +50,7 @@ func (a *application) pageDataFromRequest(
 
 	data.Strategy = string(parseTransferMode(request.FormValue("strategy")))
 	data.ReferenceDate = normalizeReferenceDate(request.FormValue("referenceDate"))
+	data.CheckReferenceDate = normalizeReferenceDate(request.FormValue("checkReferenceDate"))
 	data.ActiveTab = normalizeTab(request.FormValue("activeTab"))
 	return data
 }
@@ -125,7 +127,7 @@ func (a *application) saveCheckRows(
 
 	return loader.SaveCheckWorkbook(
 		workbookPath,
-		buildCheckRules(rows),
+		buildCheckConfigs(rows),
 	)
 }
 
@@ -139,17 +141,18 @@ func (a *application) applyConfiguration(
 	data *templates.PageData,
 	configuration config.Configuration,
 ) {
-	referenceDate := referenceDateForDisplay(data.ReferenceDate)
+	transferReferenceDate := referenceDateForDisplay(data.ReferenceDate)
+	checkReferenceDate := referenceDateForDisplay(data.CheckReferenceDate)
 
 	data.HasConfig = true
 	data.LoadedAt = time.Now().Format(time.RFC1123)
 	data.TransferRows = buildTransferRows(
 		configuration.FileTransferMaps,
-		referenceDate,
+		transferReferenceDate,
 	)
-	data.CheckRows = buildCheckRows(configuration.FileCheckRules)
+	data.CheckRows = buildCheckRows(configuration.FileCheckConfigs, checkReferenceDate)
 	data.TransferCount = len(configuration.FileTransferMaps)
-	data.CheckCount = len(configuration.FileCheckRules)
+	data.CheckCount = len(configuration.FileCheckConfigs)
 }
 
 func requestFormValueOrDefault(

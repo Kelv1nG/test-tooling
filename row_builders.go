@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -67,24 +68,57 @@ func applyTransferResultsToRows(
 }
 
 func buildCheckRows(
-	rules []config.FileCheckRule,
+	checks []config.FileCheckConfig,
+	referenceDate time.Time,
 ) []templates.CheckRowView {
-	rows := make([]templates.CheckRowView, 0, len(rules))
+	rows := make([]templates.CheckRowView, 0, len(checks))
+
+	for index, check := range checks {
+		row := templates.CheckRowView{
+			Index:    index + 1,
+			ExcelRow: check.ExcelRow,
+			ID:       check.ID,
+			NewFile:  check.NewFile,
+			OldFile:  check.OldFile,
+			Rules:    buildCheckRuleRows(check.Rules),
+		}
+
+		applyCheckPathStatus(&row, referenceDate)
+		rows = append(rows, row)
+	}
+
+	return rows
+}
+
+func buildCheckRuleRows(
+	rules []config.VerificationRule,
+) []templates.CheckRuleView {
+	rows := make([]templates.CheckRuleView, 0, len(rules))
 
 	for index, rule := range rules {
-		rows = append(rows, templates.CheckRowView{
-			Index:                 index + 1,
-			ExcelRow:              rule.ExcelRow,
-			NewFile:               rule.NewFile,
-			NewExists:             fileExistsOrFalse(rule.NewFile),
-			OldFile:               rule.OldFile,
-			OldExists:             fileExistsOrFalse(rule.OldFile),
-			HeaderSheet:           rule.HeaderCheck.Sheet,
-			HeaderAnchor:          rule.HeaderCheck.Anchor,
-			HeaderParentDirection: rule.HeaderCheck.ParentDirection,
-			HeaderMaxDepth:        formatHeaderMaxDepth(rule.HeaderCheck.MaxHeaderDepth),
-			RequireOrder:          rule.HeaderCheck.RequireOrder,
-		})
+		row := templates.CheckRuleView{
+			Index:    index + 1,
+			ExcelRow: rule.ExcelRow,
+			ID:       rule.ID,
+			CheckID:  rule.CheckID,
+			Name:     rule.Name,
+			Type:     string(rule.Type),
+			Enabled:  rule.Enabled,
+		}
+
+		switch rule.Type {
+		case config.VerificationRuleTypeHeaderCompare:
+			row.Sheet = rule.HeaderCompare.Sheet
+			row.Anchor = rule.HeaderCompare.Anchor
+			row.ParentDirection = rule.HeaderCompare.ParentDirection
+			row.MaxHeaderDepth = formatHeaderMaxDepth(rule.HeaderCompare.MaxHeaderDepth)
+			row.RequireOrder = rule.HeaderCompare.RequireOrder
+		case config.VerificationRuleTypeExactText:
+			row.Sheet = rule.ExactText.Sheet
+			row.ExpectedText = rule.ExactText.ExpectedText
+		}
+
+		rows = append(rows, row)
 	}
 
 	return rows
@@ -106,31 +140,64 @@ func buildTransferMappings(
 	return mappings
 }
 
-func buildCheckRules(
+func buildCheckConfigs(
 	rows []templates.CheckRowView,
-) []config.FileCheckRule {
-	rules := make([]config.FileCheckRule, 0, len(rows))
+) []config.FileCheckConfig {
+	checks := make([]config.FileCheckConfig, 0, len(rows))
 
 	for _, row := range rows {
-		rules = append(rules, buildCheckRule(row))
+		checks = append(checks, buildCheckConfig(row))
+	}
+
+	return checks
+}
+
+func buildCheckConfig(row templates.CheckRowView) config.FileCheckConfig {
+	return config.FileCheckConfig{
+		ExcelRow: row.ExcelRow,
+		ID:       row.ID,
+		NewFile:  row.NewFile,
+		OldFile:  row.OldFile,
+		Rules:    buildVerificationRules(row.ID, row.Rules),
+	}
+}
+
+func buildVerificationRules(
+	checkID string,
+	rows []templates.CheckRuleView,
+) []config.VerificationRule {
+	rules := make([]config.VerificationRule, 0, len(rows))
+
+	for _, row := range rows {
+		rule := config.VerificationRule{
+			ExcelRow: row.ExcelRow,
+			ID:       row.ID,
+			CheckID:  checkID,
+			Name:     row.Name,
+			Type:     config.VerificationRuleType(row.Type),
+			Enabled:  row.Enabled,
+		}
+
+		switch rule.Type {
+		case config.VerificationRuleTypeHeaderCompare:
+			rule.HeaderCompare = config.HeaderCheckConfig{
+				Sheet:           row.Sheet,
+				Anchor:          row.Anchor,
+				ParentDirection: row.ParentDirection,
+				MaxHeaderDepth:  parseHeaderMaxDepth(row.MaxHeaderDepth),
+				RequireOrder:    row.RequireOrder,
+			}
+		case config.VerificationRuleTypeExactText:
+			rule.ExactText = config.ExactMatchCheckConfig{
+				Sheet:        row.Sheet,
+				ExpectedText: row.ExpectedText,
+			}
+		}
+
+		rules = append(rules, rule)
 	}
 
 	return rules
-}
-
-func buildCheckRule(row templates.CheckRowView) config.FileCheckRule {
-	return config.FileCheckRule{
-		ExcelRow: row.ExcelRow,
-		NewFile:  row.NewFile,
-		OldFile:  row.OldFile,
-		HeaderCheck: config.HeaderCheckConfig{
-			Sheet:           row.HeaderSheet,
-			Anchor:          row.HeaderAnchor,
-			ParentDirection: row.HeaderParentDirection,
-			MaxHeaderDepth:  parseHeaderMaxDepth(row.HeaderMaxDepth),
-			RequireOrder:    row.RequireOrder,
-		},
-	}
 }
 
 func formatHeaderMaxDepth(value int) string {
@@ -148,4 +215,36 @@ func parseHeaderMaxDepth(value string) int {
 	}
 
 	return depth
+}
+
+func applyCheckPathStatus(
+	row *templates.CheckRowView,
+	referenceDate time.Time,
+) {
+	if row == nil {
+		return
+	}
+
+	newFile, err := config.ResolvePathTemplate(row.NewFile, referenceDate)
+	if err != nil {
+		row.Status = "Invalid template"
+		row.Badge = "rose"
+		row.Detail = fmt.Sprintf("new file template: %v", err)
+		return
+	}
+	row.NewExists = fileExistsOrFalse(newFile)
+
+	if row.OldFile == "" {
+		row.OldExists = false
+		return
+	}
+
+	oldFile, err := config.ResolvePathTemplate(row.OldFile, referenceDate)
+	if err != nil {
+		row.Status = "Invalid template"
+		row.Badge = "rose"
+		row.Detail = fmt.Sprintf("old file template: %v", err)
+		return
+	}
+	row.OldExists = fileExistsOrFalse(oldFile)
 }

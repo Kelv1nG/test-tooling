@@ -144,5 +144,34 @@ templ PageScripts() {
 	    row.remove();
 	    window.refreshTransferRowNumbers(editor);
 	  };
+
+	  window.addCheckRule = (button) => {
+	    const config = button.closest("[data-check-config]");
+	    const template = config?.querySelector("template[data-check-rule-template]");
+	    const rules = config?.querySelector("[data-check-rules]");
+	    if (!template || !rules) {
+	      return;
+	    }
+
+	    rules.insertAdjacentHTML("beforeend", template.innerHTML);
+	    const newRule = rules.lastElementChild;
+	    if (window.Alpine && newRule) {
+	      window.Alpine.initTree(newRule);
+	    }
+
+	    const firstInput = newRule?.querySelector("input[name='ruleID']");
+	    if (firstInput) {
+	      firstInput.focus();
+	    }
+	  };
+
+	  window.removeCheckRule = (button) => {
+	    const rule = button.closest("[data-check-rule]");
+	    if (!rule) {
+	      return;
+	    }
+
+	    rule.remove();
+	  };
 	</script>
 }

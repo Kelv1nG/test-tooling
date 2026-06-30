@@ -3,10 +3,10 @@ package headersearch
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/xuri/excelize/v2"
+
+	"tooling/sheetsearch"
 )
 
 var (
@@ -76,7 +76,7 @@ func validateExtractOptions(
 		return "", fmt.Errorf("workbook is nil")
 	}
 
-	sheetName, err := resolveSheetName(workbook, options.Sheet)
+	sheetName, err := sheetsearch.ResolveSheetName(workbook, options.Sheet)
 	if err != nil {
 		return "", err
 	}
@@ -94,35 +94,6 @@ func validateExtractOptions(
 	}
 
 	return sheetName, nil
-}
-
-func resolveSheetName(
-	workbook *excelize.File,
-	selector string,
-) (string, error) {
-	trimmed := strings.TrimSpace(selector)
-	if trimmed == "" {
-		return "", fmt.Errorf("sheet is required")
-	}
-
-	if sheetIndex, err := strconv.Atoi(trimmed); err == nil {
-		sheets := workbook.GetSheetList()
-		if sheetIndex < 1 || sheetIndex > len(sheets) {
-			return "", fmt.Errorf(
-				"sheet index %d is out of range; workbook has %d sheet(s)",
-				sheetIndex,
-				len(sheets),
-			)
-		}
-
-		return sheets[sheetIndex-1], nil
-	}
-
-	if _, err := workbook.GetRows(trimmed); err != nil {
-		return "", fmt.Errorf("read sheet %q: %w", trimmed, err)
-	}
-
-	return trimmed, nil
 }
 
 type sheetContext struct {

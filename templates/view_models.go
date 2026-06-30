@@ -1,28 +1,29 @@
 package templates
 
 type PageData struct {
-	ListenAddr        string
-	DefinitionsPath   string
-	WorkbookPath      string
-	LoadedAt          string
-	ActiveTab         string
-	HasConfig         bool
-	LoadError         string
-	SaveMessage       string
-	SaveHasErrors     bool
-	TransferCount     int
-	CheckCount        int
-	TransferRows      []TransferRowView
-	CheckRows         []CheckRowView
-	Strategy          string
-	ReferenceDate     string
-	TransferMessage   string
-	TransferHasErrors bool
-	TransferSummary   TransferSummaryView
-	TransferResults   []TransferResultView
-	CheckMessage      string
-	CheckHasIssues    bool
-	CheckSummary      CheckSummaryView
+	ListenAddr         string
+	DefinitionsPath    string
+	WorkbookPath       string
+	LoadedAt           string
+	ActiveTab          string
+	HasConfig          bool
+	LoadError          string
+	SaveMessage        string
+	SaveHasErrors      bool
+	TransferCount      int
+	CheckCount         int
+	TransferRows       []TransferRowView
+	CheckRows          []CheckRowView
+	Strategy           string
+	ReferenceDate      string
+	CheckReferenceDate string
+	TransferMessage    string
+	TransferHasErrors  bool
+	TransferSummary    TransferSummaryView
+	TransferResults    []TransferResultView
+	CheckMessage       string
+	CheckHasIssues     bool
+	CheckSummary       CheckSummaryView
 }
 
 type TransferRowView struct {
@@ -38,20 +39,36 @@ type TransferRowView struct {
 }
 
 type CheckRowView struct {
-	Index                 int
-	ExcelRow              int
-	NewFile               string
-	NewExists             bool
-	OldFile               string
-	OldExists             bool
-	HeaderSheet           string
-	HeaderAnchor          string
-	HeaderParentDirection string
-	HeaderMaxDepth        string
-	RequireOrder          bool
-	Status                string
-	Badge                 string
-	Detail                string
+	Index     int
+	ExcelRow  int
+	ID        string
+	NewFile   string
+	NewExists bool
+	OldFile   string
+	OldExists bool
+	Rules     []CheckRuleView
+	Status    string
+	Badge     string
+	Detail    string
+}
+
+type CheckRuleView struct {
+	Index           int
+	ExcelRow        int
+	ID              string
+	CheckID         string
+	Name            string
+	Type            string
+	Enabled         bool
+	Sheet           string
+	Anchor          string
+	ParentDirection string
+	MaxHeaderDepth  string
+	RequireOrder    bool
+	ExpectedText    string
+	Status          string
+	Badge           string
+	Detail          string
 }
 
 type TransferResultView struct {

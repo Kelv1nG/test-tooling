@@ -75,6 +75,13 @@ func (d FileCheckTableDefinition) validationErrors() []error {
 		)
 	}
 
+	if strings.TrimSpace(d.IDCol) == "" {
+		errs = append(
+			errs,
+			fmt.Errorf("file_check.id_column is required"),
+		)
+	}
+
 	if strings.TrimSpace(d.NewFileCol) == "" {
 		errs = append(
 			errs,
@@ -89,41 +96,34 @@ func (d FileCheckTableDefinition) validationErrors() []error {
 		)
 	}
 
-	if d.hasAnyHeaderCheckColumns() {
-		if strings.TrimSpace(d.HeaderSheetCol) == "" {
-			errs = append(
-				errs,
-				fmt.Errorf("file_check.header_sheet_column is required when header verification columns are configured"),
-			)
-		}
+	errs = append(errs, d.Rules.validationErrors()...)
 
-		if strings.TrimSpace(d.AnchorCol) == "" {
-			errs = append(
-				errs,
-				fmt.Errorf("file_check.anchor_column is required when header verification columns are configured"),
-			)
-		}
+	return errs
+}
 
-		if strings.TrimSpace(d.ParentDirectionCol) == "" {
-			errs = append(
-				errs,
-				fmt.Errorf("file_check.parent_direction_column is required when header verification columns are configured"),
-			)
-		}
+func (d FileCheckRulesTableDefinition) validationErrors() []error {
+	var errs []error
 
-		if strings.TrimSpace(d.MaxHeaderDepthCol) == "" {
-			errs = append(
-				errs,
-				fmt.Errorf("file_check.max_header_depth_column is required when header verification columns are configured"),
-			)
-		}
-
-		if strings.TrimSpace(d.RequireOrderCol) == "" {
-			errs = append(
-				errs,
-				fmt.Errorf("file_check.require_order_column is required when header verification columns are configured"),
-			)
-		}
+	if strings.TrimSpace(d.Sheet) == "" {
+		errs = append(errs, fmt.Errorf("file_check.rules.sheet is required"))
+	}
+	if strings.TrimSpace(d.CheckIDCol) == "" {
+		errs = append(errs, fmt.Errorf("file_check.rules.check_id_column is required"))
+	}
+	if strings.TrimSpace(d.RuleIDCol) == "" {
+		errs = append(errs, fmt.Errorf("file_check.rules.rule_id_column is required"))
+	}
+	if strings.TrimSpace(d.RuleNameCol) == "" {
+		errs = append(errs, fmt.Errorf("file_check.rules.rule_name_column is required"))
+	}
+	if strings.TrimSpace(d.RuleTypeCol) == "" {
+		errs = append(errs, fmt.Errorf("file_check.rules.rule_type_column is required"))
+	}
+	if strings.TrimSpace(d.EnabledCol) == "" {
+		errs = append(errs, fmt.Errorf("file_check.rules.enabled_column is required"))
+	}
+	if strings.TrimSpace(d.ConfigCol) == "" {
+		errs = append(errs, fmt.Errorf("file_check.rules.config_column is required"))
 	}
 
 	return errs
