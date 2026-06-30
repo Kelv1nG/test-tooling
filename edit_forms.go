@@ -22,7 +22,7 @@ func parseTransferRowsForm(
 	}
 
 	if form.isEmpty() {
-		return nil, fmt.Errorf("no transfer rows were submitted")
+		return []templates.TransferRowView{}, nil
 	}
 
 	if err := form.validateLengths(); err != nil {
@@ -69,10 +69,10 @@ func parseCheckRowsForm(
 	referenceDate time.Time,
 ) ([]templates.CheckRowView, error) {
 	form := checkConfigsForm{
-		excelRows: values["checkExcelRow"],
-		ids:       values["checkID"],
-		newFiles:  values["checkNewFile"],
-		oldFiles:  values["checkOldFile"],
+		excelRows:           values["checkExcelRow"],
+		ids:                 values["checkID"],
+		files:               values["checkFile"],
+		compareOffsetMonths: values["checkCompareOffsetMonths"],
 		rules: checkRulesForm{
 			parentIndexes:    values["ruleParentIndex"],
 			excelRows:        values["ruleExcelRow"],
@@ -90,18 +90,19 @@ func parseCheckRowsForm(
 	}
 
 	if form.isEmpty() {
-		return nil, fmt.Errorf("no check configs were submitted")
+		return []templates.CheckRowView{}, nil
 	}
 
 	if err := form.validateLengths(); err != nil {
 		return nil, fmt.Errorf("submitted check configs were incomplete")
 	}
 
-	rows := make([]templates.CheckRowView, 0, len(form.newFiles))
-	rowOffsetsByIndex := make(map[int]int, len(form.newFiles))
+	rows := make([]templates.CheckRowView, 0, len(form.files))
+	rowOffsetsByIndex := make(map[int]int, len(form.files))
+	usedCheckIDs := collectUsedCheckIDs(form.ids)
 	var errs config.ValidationErrors
 
-	for index := range form.newFiles {
+	for index := range form.files {
 		excelRow, err := parseRequiredExcelRow(
 			form.excelRows[index],
 			index+1,
@@ -112,32 +113,31 @@ func parseCheckRowsForm(
 		}
 
 		id := strings.TrimSpace(form.ids[index])
-		newFile := strings.TrimSpace(form.newFiles[index])
-		oldFile := strings.TrimSpace(form.oldFiles[index])
+		fileTemplate := strings.TrimSpace(form.files[index])
+		compareOffsetMonths, err := parseCheckCompareOffsetMonths(form.compareOffsetMonths[index], index+1)
+		if err != nil {
+			errs = append(errs, err)
+		}
 
 		if id == "" {
-			errs = append(errs, fmt.Errorf("check config %d requires a check id", index+1))
+			id = nextGeneratedCheckID(usedCheckIDs, index+1)
+		} else {
+			usedCheckIDs[id] = struct{}{}
 		}
-		if newFile == "" {
-			errs = append(errs, fmt.Errorf("check config %d requires a new file path", index+1))
-		}
-
-		if err := config.ValidatePathTemplate(newFile); err != nil {
-			errs = append(errs, fmt.Errorf("check config %d has an invalid new file path template: %v", index+1, err))
+		if fileTemplate == "" {
+			errs = append(errs, fmt.Errorf("check config %d requires a file path", index+1))
 		}
 
-		if oldFile != "" {
-			if err := config.ValidatePathTemplate(oldFile); err != nil {
-				errs = append(errs, fmt.Errorf("check config %d has an invalid old file path template: %v", index+1, err))
-			}
+		if err := config.ValidatePathTemplate(fileTemplate); err != nil {
+			errs = append(errs, fmt.Errorf("check config %d has an invalid file path template: %v", index+1, err))
 		}
 
 		row := templates.CheckRowView{
-			Index:    index + 1,
-			ExcelRow: excelRow,
-			ID:       id,
-			NewFile:  newFile,
-			OldFile:  oldFile,
+			Index:               index + 1,
+			ExcelRow:            excelRow,
+			ID:                  id,
+			File:                fileTemplate,
+			CompareOffsetMonths: compareOffsetMonths,
 		}
 		rows = append(rows, row)
 		rowOffsetsByIndex[row.Index] = len(rows) - 1
@@ -163,8 +163,8 @@ func parseCheckRowsForm(
 	}
 
 	for index := range rows {
-		if checkRowRequiresOldFile(rows[index]) && rows[index].OldFile == "" {
-			errs = append(errs, fmt.Errorf("check config %d requires an old file path when a header comparison rule is enabled", rows[index].Index))
+		if checkRowRequiresCompareOffset(rows[index]) && rows[index].CompareOffsetMonths == 0 {
+			errs = append(errs, fmt.Errorf("check config %d requires a non-zero compare offset when a header comparison rule is enabled", rows[index].Index))
 		}
 		applyCheckPathStatus(&rows[index], referenceDate)
 	}
@@ -174,6 +174,37 @@ func parseCheckRowsForm(
 	}
 
 	return rows, nil
+}
+
+func collectUsedCheckIDs(ids []string) map[string]struct{} {
+	used := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			continue
+		}
+		used[id] = struct{}{}
+	}
+
+	return used
+}
+
+func nextGeneratedCheckID(
+	used map[string]struct{},
+	seed int,
+) string {
+	if seed < 1 {
+		seed = 1
+	}
+
+	for counter := seed; ; counter++ {
+		id := fmt.Sprintf("CHECK-%03d", counter)
+		if _, exists := used[id]; exists {
+			continue
+		}
+		used[id] = struct{}{}
+		return id
+	}
 }
 
 type transferRowsForm struct {
@@ -195,28 +226,42 @@ func (f transferRowsForm) validateLengths() error {
 }
 
 type checkConfigsForm struct {
-	excelRows []string
-	ids       []string
-	newFiles  []string
-	oldFiles  []string
-	rules     checkRulesForm
+	excelRows           []string
+	ids                 []string
+	files               []string
+	compareOffsetMonths []string
+	rules               checkRulesForm
 }
 
 func (f checkConfigsForm) isEmpty() bool {
 	return len(f.excelRows) == 0 &&
 		len(f.ids) == 0 &&
-		len(f.newFiles) == 0 &&
-		len(f.oldFiles) == 0
+		len(f.files) == 0 &&
+		len(f.compareOffsetMonths) == 0
 }
 
 func (f checkConfigsForm) validateLengths() error {
 	if len(f.excelRows) != len(f.ids) ||
-		len(f.ids) != len(f.newFiles) ||
-		len(f.newFiles) != len(f.oldFiles) {
+		len(f.ids) != len(f.files) ||
+		len(f.files) != len(f.compareOffsetMonths) {
 		return fmt.Errorf("mismatched check config fields")
 	}
 
 	return f.rules.validateLengths()
+}
+
+func parseCheckCompareOffsetMonths(value string, rowIndex int) (int, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return 0, nil
+	}
+
+	months, err := strconv.Atoi(trimmed)
+	if err != nil {
+		return 0, fmt.Errorf("check config %d has an invalid compare offset", rowIndex)
+	}
+
+	return months, nil
 }
 
 type checkRulesForm struct {
@@ -428,7 +473,7 @@ func validateExactMatchForm(
 	return errs
 }
 
-func checkRowRequiresOldFile(row templates.CheckRowView) bool {
+func checkRowRequiresCompareOffset(row templates.CheckRowView) bool {
 	for _, rule := range row.Rules {
 		if rule.Enabled && config.VerificationRuleType(rule.Type) == config.VerificationRuleTypeHeaderCompare {
 			return true

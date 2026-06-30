@@ -10,8 +10,8 @@ func TestFileCheckReadRulesFromJSONConfig(t *testing.T) {
 	file := newFileCheckWorkbook(t)
 	definition := testFileCheckDefinition()
 
-	setRow(t, file, "File Checks", 1, []string{"Check ID", "New File", "Old File"})
-	setRow(t, file, "File Checks", 2, []string{"CHK-001", "/tmp/current.xlsx", "/tmp/previous.xlsx"})
+	setRow(t, file, "File Checks", 1, []string{"Check ID", "File", "Compare Offset Months"})
+	setRow(t, file, "File Checks", 2, []string{"CHK-001", "/tmp/report_{yyyy}_{mm}_{dd}.xlsx", "-1"})
 	setRow(t, file, "File Check Rules", 1, []string{"Check ID", "Rule ID", "Rule Name", "Rule Type", "Enabled", "Rule Config"})
 	setRow(t, file, "File Check Rules", 2, []string{
 		"CHK-001",
@@ -65,14 +65,14 @@ func TestFileCheckSaveWritesJSONConfig(t *testing.T) {
 	file := newFileCheckWorkbook(t)
 	definition := testFileCheckDefinition()
 
-	setRow(t, file, "File Checks", 1, []string{"Check ID", "New File", "Old File"})
+	setRow(t, file, "File Checks", 1, []string{"Check ID", "File", "Compare Offset Months"})
 	setRow(t, file, "File Check Rules", 1, []string{"Check ID", "Rule ID", "Rule Name", "Rule Type", "Enabled", "Rule Config"})
 
 	err := definition.save(file, []FileCheckConfig{
 		{
-			ID:      "CHK-001",
-			NewFile: "/tmp/current.xlsx",
-			OldFile: "/tmp/previous.xlsx",
+			ID:                  "CHK-001",
+			File:                "/tmp/report_{yyyy}_{mm}_{dd}.xlsx",
+			CompareOffsetMonths: -1,
 			Rules: []VerificationRule{
 				{
 					ID:      "R001",
@@ -107,10 +107,10 @@ func TestFileCheckSaveWritesJSONConfig(t *testing.T) {
 
 func testFileCheckDefinition() FileCheckTableDefinition {
 	return FileCheckTableDefinition{
-		Sheet:      "File Checks",
-		IDCol:      "Check ID",
-		NewFileCol: "New File",
-		OldFileCol: "Old File",
+		Sheet:                  "File Checks",
+		IDCol:                  "Check ID",
+		FileCol:                "File",
+		CompareOffsetMonthsCol: "Compare Offset Months",
 		Rules: FileCheckRulesTableDefinition{
 			Sheet:       "File Check Rules",
 			CheckIDCol:  "Check ID",

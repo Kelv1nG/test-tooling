@@ -11,17 +11,13 @@ templ CheckingTab(data PageData) {
 		if data.HasConfig {
 			<div class="mb-4">
 				<h2 class="text-xl font-semibold text-slate-900">Verification</h2>
-				<p class="mt-1 text-sm text-slate-600">Each file-check config can own multiple verification rules. Header rules compare old vs new files; exact-text rules search only the new file.</p>
+				<p class="mt-1 text-sm text-slate-600">Each file-check config can own multiple verification rules. Header rules compare the current reporting file against the month-offset file; exact-text rules search only the current reporting file.</p>
 			</div>
 
-			<div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+			<div class="mb-6 grid gap-4 sm:grid-cols-2">
 				<div class="rounded-[1.5rem] bg-amber-50 px-5 py-4">
 					<p class="text-3xl font-semibold text-slate-900">{ data.CheckCount }</p>
 					<p class="mt-1 text-sm text-slate-600">configured file checks</p>
-				</div>
-				<div class="rounded-[1.5rem] bg-slate-100 px-5 py-4">
-					<p class="text-3xl font-semibold text-slate-900">{ data.TransferCount }</p>
-					<p class="mt-1 text-sm text-slate-600">transfer rows loaded alongside checks</p>
 				</div>
 				<div class="rounded-[1.5rem] bg-teal-50 px-5 py-4">
 					<p class="text-3xl font-semibold text-slate-900">
@@ -94,6 +90,16 @@ templ CheckingTab(data PageData) {
 					for _, row := range data.CheckRows {
 						@CheckConfigPanel(row)
 					}
+					<template data-check-config-template>
+						@CheckConfigPanel(CheckRowView{
+							Index: len(data.CheckRows) + 1,
+							ExcelRow: 0,
+						})
+					</template>
+				</div>
+
+				<div class="flex justify-center pt-2">
+					<button type="button" onclick="window.addCheckConfigRow(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add row</button>
 				</div>
 			</form>
 		} else {
@@ -106,94 +112,117 @@ templ CheckingTab(data PageData) {
 }
 
 templ CheckConfigPanel(row CheckRowView) {
-	<details class="rounded-[1.25rem] border border-slate-200 bg-white p-4" data-check-config>
-		<summary class="grid cursor-pointer list-none gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-			<div class="min-w-0">
-				<div class="flex flex-wrap items-center gap-2">
-					if row.Status != "" {
-						<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
-					} else {
-						<span class="text-sm text-slate-400">Not run</span>
-					}
-					<span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{ len(row.Rules) } rule(s)</span>
-				</div>
-				<div class="mt-3 grid gap-2 xl:grid-cols-2">
-					<div class="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
-						<div class="text-[10px] font-semibold uppercase text-slate-500">New File</div>
-						<div title={ row.NewFile } class="mt-1 truncate font-mono text-xs text-slate-900">{ row.NewFile }</div>
+	<div x-data={ checkConfigStateExpression(row.File, row.CompareOffsetMonths) } class="rounded-[1.25rem] border border-slate-200 bg-white p-4 transition hover:border-teal-200" data-check-config>
+		<input type="hidden" name="checkExcelRow" value={ row.ExcelRow }/>
+		<input type="hidden" name="checkID" value={ row.ID }/>
+
+		<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+			<div class="min-w-0 space-y-3">
+				<div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+					<div class="inline-flex min-w-0 items-center gap-2">
+						<span class="font-semibold uppercase tracking-wide text-slate-400">ID</span>
+						<span title={ row.ID } data-check-id-display class="truncate font-mono font-semibold text-slate-800">
+							if row.ID != "" {
+								{ row.ID }
+							} else {
+								Generated on add
+							}
+						</span>
 					</div>
-					<div class="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
-						<div class="text-[10px] font-semibold uppercase text-slate-500">Old File</div>
-						if row.OldFile != "" {
-							<div title={ row.OldFile } class="mt-1 truncate font-mono text-xs text-slate-900">{ row.OldFile }</div>
+					<div class="inline-flex items-center gap-2">
+						<span class="font-semibold uppercase tracking-wide text-slate-400">Status</span>
+						if row.Status != "" {
+							<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
 						} else {
-							<div class="mt-1 text-xs text-slate-500">N/A</div>
+							<span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">Not run</span>
 						}
 					</div>
+					<div class="inline-flex items-center gap-2">
+						<span class="font-semibold uppercase tracking-wide text-slate-400">Rules</span>
+						<span data-check-rule-count class="font-semibold text-slate-800">{ len(row.Rules) } rule(s)</span>
+					</div>
 				</div>
-				<p class="mt-1 text-sm text-slate-600">
-					if row.Detail != "" {
-						<span>{ row.Detail }</span>
-					}
-				</p>
-			</div>
-			<span class="self-start rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Expand</span>
-		</summary>
 
-		<div class="mt-4 grid gap-3 lg:grid-cols-[12rem_1fr_1fr_auto]">
-			<input type="hidden" name="checkExcelRow" value={ row.ExcelRow }/>
-			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Check ID</div>
-				<input name="checkID" value={ row.ID } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
-			</label>
-			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">New File</div>
-				<div x-data={ transferPathFieldExpression(row.NewFile) }>
-					<input x-model="value" x-bind:title="value" name="checkNewFile" value={ row.NewFile } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
-					<p x-cloak x-show="window.transferTemplateHasPlaceholder(value)" x-text="window.transferTemplatePreview(value, referenceDate)" class="mt-2 font-mono text-[11px] text-slate-500"></p>
+				<div class="grid gap-2 xl:grid-cols-[minmax(0,1fr)_14rem_auto]">
+					<div class="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
+						<input type="hidden" name="checkFile" x-bind:value="file"/>
+						<div class="text-[10px] font-semibold uppercase text-slate-500">File Template</div>
+						<input x-model="file" x-bind:title="file" x-bind:readonly="!editing" value={ row.File } class="mt-1 w-full rounded-xl border px-3 py-2 font-mono text-xs text-slate-900 outline-none transition focus:ring-4" :class="editing ? 'border-teal-300 bg-white focus:border-pine focus:ring-teal-100' : 'cursor-default border-transparent bg-slate-50 focus:border-transparent focus:ring-0'"/>
+						<p x-cloak x-show="window.transferTemplateHasPlaceholder(file)" x-text="window.transferTemplatePreview(file, referenceDate)" class="mt-2 font-mono text-[11px] text-slate-500"></p>
+						if row.FileExists {
+							<span class="mt-2 inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Current exists</span>
+						} else {
+							<span class="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Current missing</span>
+						}
+					</div>
+					<div class="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
+						<input type="hidden" name="checkCompareOffsetMonths" x-bind:value="offset"/>
+						<div class="text-[10px] font-semibold uppercase text-slate-500">Compare Offset</div>
+						<select x-model.number="offset" x-bind:disabled="!editing" class="mt-1 w-full rounded-xl border px-3 py-2 text-sm text-slate-900 outline-none transition focus:ring-4" :class="editing ? 'border-teal-300 bg-white focus:border-pine focus:ring-teal-100' : 'cursor-default border-transparent bg-slate-50 focus:border-transparent focus:ring-0'">
+							if !compareOffsetIsStandard(row.CompareOffsetMonths) {
+								<option value={ row.CompareOffsetMonths }>{ compareOffsetLabel(row.CompareOffsetMonths) }</option>
+							}
+							<option value="0">No comparison</option>
+							<option value="-1">Previous month</option>
+							<option value="-2">Previous 2 months</option>
+							<option value="-3">Previous 3 months</option>
+							<option value="-6">Previous 6 months</option>
+							<option value="-12">Previous 12 months</option>
+						</select>
+						if row.CompareOffsetMonths == 0 {
+							<span class="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">Compare N/A</span>
+						} else if row.CompareExists {
+							<span class="mt-2 inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Compare exists</span>
+						} else {
+							<span class="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Compare missing</span>
+						}
+					</div>
+					<div class="flex items-start gap-2 xl:justify-end">
+						<button type="button" data-check-edit-button x-on:click="editing = !editing" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">
+							@PencilIcon()
+							<span x-text="editing ? 'Done' : 'Edit'"></span>
+						</button>
+						<button type="button" onclick="window.removeCheckConfigRow(this)" aria-label="Remove check row" title="Remove check row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
+							@TrashIcon()
+						</button>
+					</div>
 				</div>
-			</label>
-			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Old File</div>
-				<div x-data={ transferPathFieldExpression(row.OldFile) }>
-					<input x-model="value" x-bind:title="value" name="checkOldFile" value={ row.OldFile } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
-					<p x-cloak x-show="window.transferTemplateHasPlaceholder(value)" x-text="window.transferTemplatePreview(value, referenceDate)" class="mt-2 font-mono text-[11px] text-slate-500"></p>
-				</div>
-			</label>
-			<div class="flex flex-col justify-end gap-2">
-				if row.NewExists {
-					<span class="inline-flex justify-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">New exists</span>
-				} else {
-					<span class="inline-flex justify-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">New missing</span>
+
+				if row.Detail != "" {
+					<div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+						<p class="whitespace-pre-line font-mono text-xs leading-5 text-slate-700">{ row.Detail }</p>
+					</div>
 				}
-				if row.OldFile == "" {
-					<span class="inline-flex justify-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">Old N/A</span>
-				} else if row.OldExists {
-					<span class="inline-flex justify-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Old exists</span>
-				} else {
-					<span class="inline-flex justify-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Old missing</span>
-				}
 			</div>
 		</div>
 
-		<div class="mt-4 space-y-3" data-check-rules>
-			for _, rule := range row.Rules {
-				@CheckRuleEditor(row, rule)
-			}
-		</div>
+		<details class="group mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+			<summary class="flex cursor-pointer list-none items-center justify-between gap-3">
+				<span class="text-sm font-semibold text-slate-900">Rules</span>
+				<span aria-hidden="true" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition group-open:rotate-90 group-open:text-teal-700 group-open:ring-teal-200">
+					@ChevronRightIcon()
+				</span>
+			</summary>
 
-		<template data-check-rule-template>
-			@CheckRuleEditor(row, CheckRuleView{
-				Index: len(row.Rules) + 1,
-				Enabled: true,
-				Type: "exact_text",
-			})
-		</template>
+			<div class="mt-3 space-y-3" data-check-rules>
+				for _, rule := range row.Rules {
+					@CheckRuleEditor(row, rule)
+				}
+			</div>
 
-		<div class="mt-4">
-			<button type="button" onclick="window.addCheckRule(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add rule</button>
-		</div>
-	</details>
+			<template data-check-rule-template>
+				@CheckRuleEditor(row, CheckRuleView{
+					Index: len(row.Rules) + 1,
+					Enabled: true,
+					Type: "exact_text",
+				})
+			</template>
+
+			<div class="mt-4">
+				<button type="button" onclick="window.addCheckRule(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add rule</button>
+			</div>
+		</details>
+	</div>
 }
 
 templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
@@ -217,7 +246,9 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 					<span class="text-sm text-slate-400">Not run</span>
 				}
 			</div>
-			<button type="button" onclick="event.stopPropagation(); window.removeCheckRule(this)" aria-label="Remove rule" title="Remove rule" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">X</button>
+			<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.removeCheckRule(this)" aria-label="Remove rule" title="Remove rule" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
+				@TrashIcon()
+			</button>
 		</summary>
 
 		<div class="mt-4 grid gap-3 lg:grid-cols-5">
@@ -288,7 +319,7 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 		</div>
 
 		if rule.Detail != "" {
-			<p class="mt-3 text-sm text-slate-600">{ rule.Detail }</p>
+			<p class="mt-3 whitespace-pre-line rounded-2xl bg-white px-3 py-2 font-mono text-xs leading-5 text-slate-700">{ rule.Detail }</p>
 		}
 	</details>
 }

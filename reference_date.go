@@ -46,3 +46,42 @@ func referenceDateForDisplay(value string) time.Time {
 
 	return referenceDate
 }
+
+func addMonthsClamped(referenceDate time.Time, months int) time.Time {
+	targetFirstOfMonth := time.Date(
+		referenceDate.Year(),
+		referenceDate.Month()+time.Month(months),
+		1,
+		referenceDate.Hour(),
+		referenceDate.Minute(),
+		referenceDate.Second(),
+		referenceDate.Nanosecond(),
+		referenceDate.Location(),
+	)
+	targetLastDay := time.Date(
+		targetFirstOfMonth.Year(),
+		targetFirstOfMonth.Month()+1,
+		0,
+		referenceDate.Hour(),
+		referenceDate.Minute(),
+		referenceDate.Second(),
+		referenceDate.Nanosecond(),
+		referenceDate.Location(),
+	).Day()
+
+	day := referenceDate.Day()
+	if day > targetLastDay {
+		day = targetLastDay
+	}
+
+	return time.Date(
+		targetFirstOfMonth.Year(),
+		targetFirstOfMonth.Month(),
+		day,
+		referenceDate.Hour(),
+		referenceDate.Minute(),
+		referenceDate.Second(),
+		referenceDate.Nanosecond(),
+		referenceDate.Location(),
+	)
+}

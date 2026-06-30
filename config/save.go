@@ -224,8 +224,7 @@ func (d FileCheckTableDefinition) validateConfigs(
 	for index, check := range configs {
 		rowNumber := index + 1
 		id := strings.TrimSpace(check.ID)
-		newFile := strings.TrimSpace(check.NewFile)
-		oldFile := strings.TrimSpace(check.OldFile)
+		fileTemplate := strings.TrimSpace(check.File)
 
 		if id == "" {
 			errs = append(errs, fmt.Errorf("check config %d requires a check id", rowNumber))
@@ -235,11 +234,11 @@ func (d FileCheckTableDefinition) validateConfigs(
 			seenIDs[id] = struct{}{}
 		}
 
-		if newFile == "" {
-			errs = append(errs, fmt.Errorf("check config %d requires a new file path", rowNumber))
+		if fileTemplate == "" {
+			errs = append(errs, fmt.Errorf("check config %d requires a file path", rowNumber))
 		}
-		if check.requiresOldFile() && oldFile == "" {
-			errs = append(errs, fmt.Errorf("check config %d requires an old file path because it has a header comparison rule", rowNumber))
+		if check.requiresCompareOffset() && check.CompareOffsetMonths == 0 {
+			errs = append(errs, fmt.Errorf("check config %d requires a non-zero compare offset because it has a header comparison rule", rowNumber))
 		}
 
 		seenRuleIDs := make(map[string]struct{}, len(check.Rules))
@@ -348,11 +347,11 @@ func (d FileCheckTableDefinition) writeConfigs(
 	if err != nil {
 		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
 	}
-	newFileCol, err := requireColumn(headers, d.NewFileCol)
+	fileCol, err := requireColumn(headers, d.FileCol)
 	if err != nil {
 		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
 	}
-	oldFileCol, err := requireColumn(headers, d.OldFileCol)
+	compareOffsetMonthsCol, err := requireColumn(headers, d.CompareOffsetMonthsCol)
 	if err != nil {
 		return fmt.Errorf("sheet %q: %w", d.Sheet, err)
 	}
@@ -367,10 +366,10 @@ func (d FileCheckTableDefinition) writeConfigs(
 		if err := setStringCell(file, d.Sheet, idCol, row, check.ID); err != nil {
 			errs = append(errs, err)
 		}
-		if err := setStringCell(file, d.Sheet, newFileCol, row, check.NewFile); err != nil {
+		if err := setStringCell(file, d.Sheet, fileCol, row, check.File); err != nil {
 			errs = append(errs, err)
 		}
-		if err := setStringCell(file, d.Sheet, oldFileCol, row, check.OldFile); err != nil {
+		if err := setStringCell(file, d.Sheet, compareOffsetMonthsCol, row, strconv.Itoa(check.CompareOffsetMonths)); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -532,13 +531,13 @@ func (t VerificationRuleType) valid() bool {
 	return t == VerificationRuleTypeHeaderCompare || t == VerificationRuleTypeExactText
 }
 
-func (r VerificationRule) requiresOldFile() bool {
+func (r VerificationRule) requiresCompareOffset() bool {
 	return r.Enabled && r.Type == VerificationRuleTypeHeaderCompare
 }
 
-func (c FileCheckConfig) requiresOldFile() bool {
+func (c FileCheckConfig) requiresCompareOffset() bool {
 	for _, rule := range c.Rules {
-		if rule.requiresOldFile() {
+		if rule.requiresCompareOffset() {
 			return true
 		}
 	}

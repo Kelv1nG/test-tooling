@@ -30,11 +30,11 @@ func (d FileCheckTableDefinition) read(
 	if err != nil {
 		errs = append(errs, fmt.Errorf("sheet %q: %w", d.Sheet, err))
 	}
-	newFileCol, err := requireColumn(headers, d.NewFileCol)
+	fileCol, err := requireColumn(headers, d.FileCol)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("sheet %q: %w", d.Sheet, err))
 	}
-	oldFileCol, err := requireColumn(headers, d.OldFileCol)
+	compareOffsetMonthsCol, err := requireColumn(headers, d.CompareOffsetMonthsCol)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("sheet %q: %w", d.Sheet, err))
 	}
@@ -47,10 +47,10 @@ func (d FileCheckTableDefinition) read(
 	for index, row := range rows[1:] {
 		excelRow := index + 2
 		id := strings.TrimSpace(getCell(row, idCol))
-		newFile := strings.TrimSpace(getCell(row, newFileCol))
-		oldFile := strings.TrimSpace(getCell(row, oldFileCol))
+		fileTemplate := strings.TrimSpace(getCell(row, fileCol))
+		compareOffsetRaw := strings.TrimSpace(getCell(row, compareOffsetMonthsCol))
 
-		if id == "" && newFile == "" && oldFile == "" {
+		if id == "" && fileTemplate == "" && compareOffsetRaw == "" {
 			continue
 		}
 
@@ -59,9 +59,17 @@ func (d FileCheckTableDefinition) read(
 			errs = append(errs, fmt.Errorf("sheet %q, row %d: column %q is required", d.Sheet, excelRow, d.IDCol))
 			rowIsInvalid = true
 		}
-		if newFile == "" {
-			errs = append(errs, fmt.Errorf("sheet %q, row %d: column %q is required", d.Sheet, excelRow, d.NewFileCol))
+		if fileTemplate == "" {
+			errs = append(errs, fmt.Errorf("sheet %q, row %d: column %q is required", d.Sheet, excelRow, d.FileCol))
 			rowIsInvalid = true
+		}
+		compareOffsetMonths := 0
+		if compareOffsetRaw != "" {
+			compareOffsetMonths, err = strconv.Atoi(compareOffsetRaw)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("sheet %q, row %d: column %q must be a whole number of months", d.Sheet, excelRow, d.CompareOffsetMonthsCol))
+				rowIsInvalid = true
+			}
 		}
 		if _, exists := configIndexByID[id]; id != "" && exists {
 			errs = append(errs, fmt.Errorf("sheet %q, row %d: duplicate check id %q", d.Sheet, excelRow, id))
@@ -72,10 +80,10 @@ func (d FileCheckTableDefinition) read(
 		}
 
 		configs = append(configs, FileCheckConfig{
-			ExcelRow: excelRow,
-			ID:       id,
-			NewFile:  newFile,
-			OldFile:  oldFile,
+			ExcelRow:            excelRow,
+			ID:                  id,
+			File:                fileTemplate,
+			CompareOffsetMonths: compareOffsetMonths,
 		})
 		configIndexByID[id] = len(configs) - 1
 	}
@@ -94,8 +102,8 @@ func (d FileCheckTableDefinition) read(
 	}
 
 	for index := range configs {
-		if configs[index].requiresOldFile() && strings.TrimSpace(configs[index].OldFile) == "" {
-			errs = append(errs, fmt.Errorf("sheet %q, row %d: column %q is required when a header comparison rule exists", d.Sheet, configs[index].ExcelRow, d.OldFileCol))
+		if configs[index].requiresCompareOffset() && configs[index].CompareOffsetMonths == 0 {
+			errs = append(errs, fmt.Errorf("sheet %q, row %d: column %q must be non-zero when a header comparison rule exists", d.Sheet, configs[index].ExcelRow, d.CompareOffsetMonthsCol))
 		}
 	}
 

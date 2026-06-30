@@ -75,12 +75,12 @@ func buildCheckRows(
 
 	for index, check := range checks {
 		row := templates.CheckRowView{
-			Index:    index + 1,
-			ExcelRow: check.ExcelRow,
-			ID:       check.ID,
-			NewFile:  check.NewFile,
-			OldFile:  check.OldFile,
-			Rules:    buildCheckRuleRows(check.Rules),
+			Index:               index + 1,
+			ExcelRow:            check.ExcelRow,
+			ID:                  check.ID,
+			File:                check.File,
+			CompareOffsetMonths: check.CompareOffsetMonths,
+			Rules:               buildCheckRuleRows(check.Rules),
 		}
 
 		applyCheckPathStatus(&row, referenceDate)
@@ -154,11 +154,11 @@ func buildCheckConfigs(
 
 func buildCheckConfig(row templates.CheckRowView) config.FileCheckConfig {
 	return config.FileCheckConfig{
-		ExcelRow: row.ExcelRow,
-		ID:       row.ID,
-		NewFile:  row.NewFile,
-		OldFile:  row.OldFile,
-		Rules:    buildVerificationRules(row.ID, row.Rules),
+		ExcelRow:            row.ExcelRow,
+		ID:                  row.ID,
+		File:                row.File,
+		CompareOffsetMonths: row.CompareOffsetMonths,
+		Rules:               buildVerificationRules(row.ID, row.Rules),
 	}
 }
 
@@ -225,26 +225,27 @@ func applyCheckPathStatus(
 		return
 	}
 
-	newFile, err := config.ResolvePathTemplate(row.NewFile, referenceDate)
+	currentFile, err := config.ResolvePathTemplate(row.File, referenceDate)
 	if err != nil {
 		row.Status = "Invalid template"
 		row.Badge = "rose"
-		row.Detail = fmt.Sprintf("new file template: %v", err)
+		row.Detail = fmt.Sprintf("file template: %v", err)
 		return
 	}
-	row.NewExists = fileExistsOrFalse(newFile)
+	row.FileExists = fileExistsOrFalse(currentFile)
 
-	if row.OldFile == "" {
-		row.OldExists = false
+	if !checkRowRequiresCompareOffset(*row) || row.CompareOffsetMonths == 0 {
+		row.CompareExists = false
 		return
 	}
 
-	oldFile, err := config.ResolvePathTemplate(row.OldFile, referenceDate)
+	compareDate := addMonthsClamped(referenceDate, row.CompareOffsetMonths)
+	compareFile, err := config.ResolvePathTemplate(row.File, compareDate)
 	if err != nil {
 		row.Status = "Invalid template"
 		row.Badge = "rose"
-		row.Detail = fmt.Sprintf("old file template: %v", err)
+		row.Detail = fmt.Sprintf("compare file template: %v", err)
 		return
 	}
-	row.OldExists = fileExistsOrFalse(oldFile)
+	row.CompareExists = fileExistsOrFalse(compareFile)
 }

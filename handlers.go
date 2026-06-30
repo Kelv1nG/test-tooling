@@ -131,10 +131,8 @@ func (a *application) handleSaveTransfer(
 	}
 
 	rows, err := parseTransferRowsForm(request.Form, referenceDate)
-	if len(rows) > 0 {
-		data.TransferRows = rows
-		data.TransferCount = len(rows)
-	}
+	data.TransferRows = rows
+	data.TransferCount = len(rows)
 
 	if err != nil {
 		data.SaveHasErrors = true
@@ -187,10 +185,8 @@ func (a *application) handleSaveChecks(
 	}
 
 	rows, err := parseCheckRowsForm(request.Form, referenceDate)
-	if len(rows) > 0 {
-		data.CheckRows = rows
-		data.CheckCount = len(rows)
-	}
+	data.CheckRows = rows
+	data.CheckCount = len(rows)
 
 	if err != nil {
 		data.SaveHasErrors = true
@@ -243,10 +239,8 @@ func (a *application) handleVerifyChecks(
 	}
 
 	rows, err := parseCheckRowsForm(request.Form, referenceDate)
-	if len(rows) > 0 {
-		data.CheckRows = rows
-		data.CheckCount = len(rows)
-	}
+	data.CheckRows = rows
+	data.CheckCount = len(rows)
 
 	if err != nil {
 		data.CheckHasIssues = true

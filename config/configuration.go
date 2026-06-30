@@ -12,11 +12,11 @@ type FileTransferMap struct {
 }
 
 type FileCheckConfig struct {
-	ExcelRow int
-	ID       string
-	NewFile  string
-	OldFile  string
-	Rules    []VerificationRule
+	ExcelRow            int
+	ID                  string
+	File                string
+	CompareOffsetMonths int
+	Rules               []VerificationRule
 }
 
 type VerificationRuleType string

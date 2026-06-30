@@ -39,17 +39,17 @@ type TransferRowView struct {
 }
 
 type CheckRowView struct {
-	Index     int
-	ExcelRow  int
-	ID        string
-	NewFile   string
-	NewExists bool
-	OldFile   string
-	OldExists bool
-	Rules     []CheckRuleView
-	Status    string
-	Badge     string
-	Detail    string
+	Index               int
+	ExcelRow            int
+	ID                  string
+	File                string
+	FileExists          bool
+	CompareOffsetMonths int
+	CompareExists       bool
+	Rules               []CheckRuleView
+	Status              string
+	Badge               string
+	Detail              string
 }
 
 type CheckRuleView struct {

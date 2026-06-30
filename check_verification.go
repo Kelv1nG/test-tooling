@@ -67,24 +67,24 @@ func runCheckConfigVerification(
 		return
 	}
 
-	newFile, err := config.ResolvePathTemplate(row.NewFile, referenceDate)
+	currentFile, err := config.ResolvePathTemplate(row.File, referenceDate)
 	if err != nil {
-		markEnabledRulesErrored(row, summary, fmt.Sprintf("resolve new file template: %v", err))
+		markEnabledRulesErrored(row, summary, fmt.Sprintf("resolve file template: %v", err))
 		return
 	}
 
-	newWorkbook, err := excelize.OpenFile(newFile)
+	currentWorkbook, err := excelize.OpenFile(currentFile)
 	if err != nil {
-		markEnabledRulesErrored(row, summary, fmt.Sprintf("open new file: %v", err))
+		markEnabledRulesErrored(row, summary, fmt.Sprintf("open current file: %v", err))
 		return
 	}
-	defer newWorkbook.Close()
+	defer currentWorkbook.Close()
 
-	var oldWorkbook *excelize.File
-	var oldWorkbookErr error
+	var compareWorkbook *excelize.File
+	var compareWorkbookErr error
 	defer func() {
-		if oldWorkbook != nil {
-			_ = oldWorkbook.Close()
+		if compareWorkbook != nil {
+			_ = compareWorkbook.Close()
 		}
 	}()
 
@@ -98,16 +98,16 @@ func runCheckConfigVerification(
 
 		switch config.VerificationRuleType(rule.Type) {
 		case config.VerificationRuleTypeHeaderCompare:
-			if oldWorkbook == nil && oldWorkbookErr == nil {
-				oldWorkbook, oldWorkbookErr = openOldWorkbook(row.OldFile, referenceDate)
+			if compareWorkbook == nil && compareWorkbookErr == nil {
+				compareWorkbook, compareWorkbookErr = openCompareWorkbook(row.File, row.CompareOffsetMonths, referenceDate)
 			}
-			if oldWorkbookErr != nil {
-				markRuleError(rule, summary, oldWorkbookErr.Error())
+			if compareWorkbookErr != nil {
+				markRuleError(rule, summary, compareWorkbookErr.Error())
 				continue
 			}
-			runHeaderComparisonRule(rule, oldWorkbook, newWorkbook, summary)
+			runHeaderComparisonRule(rule, compareWorkbook, currentWorkbook, summary)
 		case config.VerificationRuleTypeExactText:
-			runExactTextRule(rule, newWorkbook, referenceDate, summary)
+			runExactTextRule(rule, currentWorkbook, referenceDate, summary)
 		default:
 			markRuleError(rule, summary, fmt.Sprintf("unsupported rule type %q", rule.Type))
 		}
@@ -116,22 +116,24 @@ func runCheckConfigVerification(
 	applyCheckConfigStatus(row)
 }
 
-func openOldWorkbook(
-	oldFileTemplate string,
+func openCompareWorkbook(
+	fileTemplate string,
+	compareOffsetMonths int,
 	referenceDate time.Time,
 ) (*excelize.File, error) {
-	if strings.TrimSpace(oldFileTemplate) == "" {
-		return nil, fmt.Errorf("old file is required for header comparison")
+	if compareOffsetMonths == 0 {
+		return nil, fmt.Errorf("compare offset months must be non-zero for header comparison")
 	}
 
-	oldFile, err := config.ResolvePathTemplate(oldFileTemplate, referenceDate)
+	compareDate := addMonthsClamped(referenceDate, compareOffsetMonths)
+	compareFile, err := config.ResolvePathTemplate(fileTemplate, compareDate)
 	if err != nil {
-		return nil, fmt.Errorf("resolve old file template: %w", err)
+		return nil, fmt.Errorf("resolve compare file template: %w", err)
 	}
 
-	workbook, err := excelize.OpenFile(oldFile)
+	workbook, err := excelize.OpenFile(compareFile)
 	if err != nil {
-		return nil, fmt.Errorf("open old file: %w", err)
+		return nil, fmt.Errorf("open compare file: %w", err)
 	}
 
 	return workbook, nil
@@ -139,8 +141,8 @@ func openOldWorkbook(
 
 func runHeaderComparisonRule(
 	rule *templates.CheckRuleView,
-	oldWorkbook *excelize.File,
-	newWorkbook *excelize.File,
+	compareWorkbook *excelize.File,
+	currentWorkbook *excelize.File,
 	summary *templates.CheckSummaryView,
 ) {
 	options, err := extractOptionsFromRule(*rule)
@@ -149,21 +151,21 @@ func runHeaderComparisonRule(
 		return
 	}
 
-	oldHeaders, err := headersearch.ExtractHeaders(oldWorkbook, options)
+	compareHeaders, err := headersearch.ExtractHeaders(compareWorkbook, options)
 	if err != nil {
-		markRuleError(rule, summary, fmt.Sprintf("old file extraction failed: %v", err))
+		markRuleError(rule, summary, fmt.Sprintf("compare file extraction failed: %v", err))
 		return
 	}
 
-	newHeaders, err := headersearch.ExtractHeaders(newWorkbook, options)
+	currentHeaders, err := headersearch.ExtractHeaders(currentWorkbook, options)
 	if err != nil {
-		markRuleError(rule, summary, fmt.Sprintf("new file extraction failed: %v", err))
+		markRuleError(rule, summary, fmt.Sprintf("current file extraction failed: %v", err))
 		return
 	}
 
 	result := headersearch.CompareHeaders(
-		oldHeaders,
-		newHeaders,
+		compareHeaders,
+		currentHeaders,
 		headersearch.CompareOptions{RequireOrder: rule.RequireOrder},
 	)
 	if result.Equal {
@@ -201,7 +203,7 @@ func runExactTextRule(
 		return
 	}
 
-	markRuleChanged(rule, summary, "Exact text not found in the new file.")
+	markRuleChanged(rule, summary, "Exact text not found in the current file.")
 }
 
 func extractOptionsFromRule(
@@ -296,35 +298,98 @@ func applyCheckConfigStatus(row *templates.CheckRowView) {
 		row.Badge = "slate"
 	}
 
-	row.Detail = fmt.Sprintf(
+	detail := fmt.Sprintf(
 		"%d matched, %d changed, %d errors, %d skipped.",
 		statusCounts["Matched"],
 		statusCounts["Changed"],
 		statusCounts["Error"],
 		statusCounts["Disabled"]+statusCounts[""],
 	)
+
+	if highlights := checkConfigHighlights(row.Rules); len(highlights) > 0 {
+		detail += "\n" + strings.Join(highlights, "\n")
+	}
+
+	row.Detail = detail
+}
+
+func checkConfigHighlights(
+	rules []templates.CheckRuleView,
+) []string {
+	highlights := make([]string, 0)
+
+	for _, rule := range rules {
+		if rule.Status != "Changed" && rule.Status != "Error" {
+			continue
+		}
+
+		label := rule.Name
+		if strings.TrimSpace(label) == "" {
+			label = rule.ID
+		}
+		if strings.TrimSpace(label) == "" {
+			label = fmt.Sprintf("Rule %d", rule.Index)
+		}
+
+		highlights = append(highlights, fmt.Sprintf("%s:", label))
+		for _, line := range splitDetailLines(rule.Detail) {
+			highlights = append(highlights, line)
+		}
+	}
+
+	return highlights
+}
+
+func splitDetailLines(detail string) []string {
+	lines := make([]string, 0)
+
+	for _, line := range strings.Split(detail, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		lines = append(lines, line)
+	}
+
+	return lines
 }
 
 func formatHeaderDifference(
 	difference headersearch.HeaderDifference,
 ) string {
-	parts := make([]string, 0, 3)
+	lines := make([]string, 0, len(difference.Missing)+len(difference.Unexpected)+3)
 
-	if len(difference.Missing) > 0 {
-		parts = append(parts, fmt.Sprintf("%d missing from new file", len(difference.Missing)))
+	if len(difference.Missing) > 0 || len(difference.Unexpected) > 0 {
+		lines = append(lines, "column changes:")
 	}
 
-	if len(difference.Unexpected) > 0 {
-		parts = append(parts, fmt.Sprintf("%d unexpected in new file", len(difference.Unexpected)))
+	for _, path := range difference.Missing {
+		lines = append(lines, "-- "+formatChangedColumn(path))
+	}
+
+	for _, path := range difference.Unexpected {
+		lines = append(lines, "++ "+formatChangedColumn(path))
 	}
 
 	if difference.Reordered {
-		parts = append(parts, "same headers, different order")
+		lines = append(lines, "column order changed")
 	}
 
-	if len(parts) == 0 {
+	if len(lines) == 0 {
 		return "Header comparison found differences."
 	}
 
-	return strings.Join(parts, "; ") + "."
+	return strings.Join(lines, "\n")
+}
+
+func formatChangedColumn(path []string) string {
+	if len(path) == 0 {
+		return "(blank column)"
+	}
+	if len(path) == 1 {
+		return path[0]
+	}
+
+	return strings.Join(path[:len(path)-1], " > ")
 }

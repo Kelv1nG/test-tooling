@@ -110,6 +110,23 @@ templ PageScripts() {
 	    return `Resolves to: ${resolved}`;
 	  };
 
+	  window.checkCompareOffsetLabel = (months) => {
+	    const value = Number(months || 0);
+	    switch (value) {
+	      case 0:
+	        return "No comparison";
+	      case -1:
+	        return "Previous month";
+	      case -2:
+	      case -3:
+	      case -6:
+	      case -12:
+	        return `Previous ${Math.abs(value)} months`;
+	      default:
+	        return `${value} months`;
+	    }
+	  };
+
 	  window.refreshTransferRowNumbers = (root) => {
 	    root.querySelectorAll("[data-transfer-row-number]").forEach((node, index) => {
 	      node.textContent = String(index + 1);
@@ -145,6 +162,79 @@ templ PageScripts() {
 	    window.refreshTransferRowNumbers(editor);
 	  };
 
+	  window.updateCheckRuleCount = (config) => {
+	    const count = config?.querySelectorAll("[data-check-rules] > [data-check-rule]").length ?? 0;
+	    const target = config?.querySelector("[data-check-rule-count]");
+	    if (target) {
+	      target.textContent = `${count} rule(s)`;
+	    }
+	  };
+
+	  window.nextCheckConfigID = (editor, seed) => {
+	    const used = new Set(
+	      Array.from(editor.querySelectorAll("input[name='checkID']"))
+	        .map((input) => input.value.trim())
+	        .filter(Boolean)
+	    );
+
+	    let counter = Math.max(1, seed || 1);
+	    let candidate = "";
+	    do {
+	      candidate = `CHECK-${String(counter).padStart(3, "0")}`;
+	      counter += 1;
+	    } while (used.has(candidate));
+
+	    return candidate;
+	  };
+
+	  window.refreshCheckConfigIndexes = (editor) => {
+	    const configs = Array.from(editor?.querySelectorAll("[data-check-config]") || []);
+	    configs.forEach((config, index) => {
+	      const rowNumber = index + 1;
+	      const idInput = config.querySelector("input[name='checkID']");
+	      const idDisplay = config.querySelector("[data-check-id-display]");
+	      if (idInput && !idInput.value.trim()) {
+	        idInput.value = window.nextCheckConfigID(editor, rowNumber);
+	      }
+	      if (idInput && idDisplay) {
+	        idDisplay.textContent = idInput.value || "Generated on save";
+	        idDisplay.title = idInput.value;
+	      }
+
+	      config.querySelectorAll("input[name='ruleParentIndex']").forEach((input) => {
+	        input.value = String(rowNumber);
+	      });
+	      window.updateCheckRuleCount(config);
+	    });
+	  };
+
+	  window.addCheckConfigRow = (button) => {
+	    const editor = button.closest("form")?.querySelector("[data-check-editor]");
+	    const template = editor?.querySelector("template[data-check-config-template]");
+	    if (!editor || !template) {
+	      return;
+	    }
+
+	    template.insertAdjacentHTML("beforebegin", template.innerHTML);
+	    const newConfig = template.previousElementSibling;
+	    if (window.Alpine && newConfig) {
+	      window.Alpine.initTree(newConfig);
+	    }
+
+	    window.refreshCheckConfigIndexes(editor);
+	  };
+
+	  window.removeCheckConfigRow = (button) => {
+	    const editor = button.closest("[data-check-editor]");
+	    const config = button.closest("[data-check-config]");
+	    if (!editor || !config) {
+	      return;
+	    }
+
+	    config.remove();
+	    window.refreshCheckConfigIndexes(editor);
+	  };
+
 	  window.addCheckRule = (button) => {
 	    const config = button.closest("[data-check-config]");
 	    const template = config?.querySelector("template[data-check-rule-template]");
@@ -159,6 +249,14 @@ templ PageScripts() {
 	      window.Alpine.initTree(newRule);
 	    }
 
+	    const editor = config.closest("[data-check-editor]");
+	    const parentIndex = Array.from(editor?.querySelectorAll("[data-check-config]") || []).indexOf(config) + 1;
+	    const parentInput = newRule?.querySelector("input[name='ruleParentIndex']");
+	    if (parentInput && parentIndex > 0) {
+	      parentInput.value = String(parentIndex);
+	    }
+	    window.updateCheckRuleCount(config);
+
 	    const firstInput = newRule?.querySelector("input[name='ruleID']");
 	    if (firstInput) {
 	      firstInput.focus();
@@ -171,7 +269,9 @@ templ PageScripts() {
 	      return;
 	    }
 
+	    const config = rule.closest("[data-check-config]");
 	    rule.remove();
+	    window.updateCheckRuleCount(config);
 	  };
 	</script>
 }

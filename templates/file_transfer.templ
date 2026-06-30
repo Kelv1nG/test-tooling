@@ -282,7 +282,9 @@ templ TransferTableCard(data PageData) {
 									}
 								</td>
 								<td class="py-3 pl-4">
-									<button type="button" onclick="window.removeTransferRow(this)" aria-label="Remove row" title="Remove row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">X</button>
+									<button type="button" onclick="window.removeTransferRow(this)" aria-label="Remove row" title="Remove row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
+										@TrashIcon()
+									</button>
 								</td>
 							</tr>
 						}
@@ -317,7 +319,9 @@ templ TransferTableCard(data PageData) {
 						</td>
 						<td class="py-3 text-slate-600">New row.</td>
 						<td class="py-3 pl-4">
-							<button type="button" onclick="window.removeTransferRow(this)" aria-label="Remove row" title="Remove row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">X</button>
+							<button type="button" onclick="window.removeTransferRow(this)" aria-label="Remove row" title="Remove row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
+								@TrashIcon()
+							</button>
 						</td>
 					</tr>
 				</template>

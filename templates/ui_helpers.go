@@ -25,12 +25,40 @@ func referenceDateStateExpression(referenceDate string) string {
 	return fmt.Sprintf(`{ referenceDate: %q }`, referenceDate)
 }
 
+func checkConfigStateExpression(file string, compareOffsetMonths int) string {
+	return fmt.Sprintf(
+		`{ editing: false, file: %q, offset: %d }`,
+		file,
+		compareOffsetMonths,
+	)
+}
+
 func ruleTypeStateExpression(ruleType string) string {
 	if ruleType == "" {
 		ruleType = "exact_text"
 	}
 
 	return fmt.Sprintf(`{ ruleType: %q }`, ruleType)
+}
+
+func compareOffsetLabel(months int) string {
+	switch months {
+	case 0:
+		return "No comparison"
+	case -1:
+		return "Previous month"
+	default:
+		return fmt.Sprintf("%d months", months)
+	}
+}
+
+func compareOffsetIsStandard(months int) bool {
+	switch months {
+	case 0, -1, -2, -3, -6, -12:
+		return true
+	default:
+		return false
+	}
 }
 
 func saveMessageClasses(hasErrors bool) string {

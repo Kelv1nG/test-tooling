@@ -48,26 +48,26 @@ func TestParseTransferRowsFormRejectsUnsupportedTemplate(t *testing.T) {
 	}
 }
 
-func TestParseCheckRowsFormAllowsExactMatchWithoutOldFile(t *testing.T) {
+func TestParseCheckRowsFormAllowsExactMatchWithoutCompareOffset(t *testing.T) {
 	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
 
 	rows, err := parseCheckRowsForm(map[string][]string{
-		"checkExcelRow":       []string{"2"},
-		"checkID":             []string{"CHK-001"},
-		"checkNewFile":        []string{`/tmp/report_{yyyy}_{mm}_{dd}.xlsx`},
-		"checkOldFile":        []string{""},
-		"ruleParentIndex":     []string{"1"},
-		"ruleExcelRow":        []string{"2"},
-		"ruleID":              []string{"R001"},
-		"ruleName":            []string{"Performance phrase"},
-		"ruleType":            []string{"exact_text"},
-		"ruleEnabled":         []string{"true"},
-		"ruleSheet":           []string{"Report"},
-		"ruleAnchor":          []string{""},
-		"ruleParentDirection": []string{""},
-		"ruleMaxHeaderDepth":  []string{""},
-		"ruleRequireOrder":    []string{"false"},
-		"ruleExpectedText":    []string{"Actual performance from 10/5/2021 to {mm}/{dd}/{yy}"},
+		"checkExcelRow":            []string{"2"},
+		"checkID":                  []string{"CHK-001"},
+		"checkFile":                []string{`/tmp/report_{yyyy}_{mm}_{dd}.xlsx`},
+		"checkCompareOffsetMonths": []string{"0"},
+		"ruleParentIndex":          []string{"1"},
+		"ruleExcelRow":             []string{"2"},
+		"ruleID":                   []string{"R001"},
+		"ruleName":                 []string{"Performance phrase"},
+		"ruleType":                 []string{"exact_text"},
+		"ruleEnabled":              []string{"true"},
+		"ruleSheet":                []string{"Report"},
+		"ruleAnchor":               []string{""},
+		"ruleParentDirection":      []string{""},
+		"ruleMaxHeaderDepth":       []string{""},
+		"ruleRequireOrder":         []string{"false"},
+		"ruleExpectedText":         []string{"Actual performance from 10/5/2021 to {mm}/{dd}/{yy}"},
 	}, referenceDate)
 	if err != nil {
 		t.Fatalf("parseCheckRowsForm returned error: %v", err)
@@ -77,8 +77,8 @@ func TestParseCheckRowsFormAllowsExactMatchWithoutOldFile(t *testing.T) {
 		t.Fatalf("expected 1 row, got %d", len(rows))
 	}
 
-	if rows[0].OldFile != "" {
-		t.Fatalf("expected old file to stay empty, got %q", rows[0].OldFile)
+	if rows[0].CompareOffsetMonths != 0 {
+		t.Fatalf("expected compare offset to stay 0, got %d", rows[0].CompareOffsetMonths)
 	}
 	if len(rows[0].Rules) != 1 {
 		t.Fatalf("expected 1 rule, got %d", len(rows[0].Rules))
@@ -91,32 +91,53 @@ func TestParseCheckRowsFormAllowsExactMatchWithoutOldFile(t *testing.T) {
 	}
 }
 
-func TestParseCheckRowsFormRequiresOldFileForHeaderComparison(t *testing.T) {
+func TestParseCheckRowsFormGeneratesMissingCheckID(t *testing.T) {
+	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
+
+	rows, err := parseCheckRowsForm(map[string][]string{
+		"checkExcelRow":            []string{"0"},
+		"checkID":                  []string{""},
+		"checkFile":                []string{`/tmp/report.xlsx`},
+		"checkCompareOffsetMonths": []string{"0"},
+	}, referenceDate)
+	if err != nil {
+		t.Fatalf("parseCheckRowsForm returned error: %v", err)
+	}
+
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row, got %d", len(rows))
+	}
+	if rows[0].ID != "CHECK-001" {
+		t.Fatalf("expected generated check id, got %q", rows[0].ID)
+	}
+}
+
+func TestParseCheckRowsFormRequiresCompareOffsetForHeaderComparison(t *testing.T) {
 	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
 
 	_, err := parseCheckRowsForm(map[string][]string{
-		"checkExcelRow":       []string{"2"},
-		"checkID":             []string{"CHK-001"},
-		"checkNewFile":        []string{`/tmp/report.xlsx`},
-		"checkOldFile":        []string{""},
-		"ruleParentIndex":     []string{"1"},
-		"ruleExcelRow":        []string{"2"},
-		"ruleID":              []string{"R001"},
-		"ruleName":            []string{"Headers unchanged"},
-		"ruleType":            []string{"header_compare"},
-		"ruleEnabled":         []string{"true"},
-		"ruleSheet":           []string{"Report"},
-		"ruleAnchor":          []string{"Fund Name"},
-		"ruleParentDirection": []string{"up"},
-		"ruleMaxHeaderDepth":  []string{"1"},
-		"ruleRequireOrder":    []string{"false"},
-		"ruleExpectedText":    []string{""},
+		"checkExcelRow":            []string{"2"},
+		"checkID":                  []string{"CHK-001"},
+		"checkFile":                []string{`/tmp/report.xlsx`},
+		"checkCompareOffsetMonths": []string{"0"},
+		"ruleParentIndex":          []string{"1"},
+		"ruleExcelRow":             []string{"2"},
+		"ruleID":                   []string{"R001"},
+		"ruleName":                 []string{"Headers unchanged"},
+		"ruleType":                 []string{"header_compare"},
+		"ruleEnabled":              []string{"true"},
+		"ruleSheet":                []string{"Report"},
+		"ruleAnchor":               []string{"Fund Name"},
+		"ruleParentDirection":      []string{"up"},
+		"ruleMaxHeaderDepth":       []string{"1"},
+		"ruleRequireOrder":         []string{"false"},
+		"ruleExpectedText":         []string{""},
 	}, referenceDate)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "requires an old file path when a header comparison rule is enabled") {
+	if !strings.Contains(err.Error(), "requires a non-zero compare offset when a header comparison rule is enabled") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

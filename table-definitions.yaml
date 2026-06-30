@@ -6,8 +6,8 @@ file_transfer:
 file_check:
   sheet: File Checks
   id_column: Check ID
-  new_file_column: New File
-  old_file_column: Old File
+  file_column: File
+  compare_offset_months_column: Compare Offset Months
   rules:
     sheet: File Check Rules
     check_id_column: Check ID

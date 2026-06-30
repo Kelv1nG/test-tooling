@@ -82,17 +82,17 @@ func (d FileCheckTableDefinition) validationErrors() []error {
 		)
 	}
 
-	if strings.TrimSpace(d.NewFileCol) == "" {
+	if strings.TrimSpace(d.FileCol) == "" {
 		errs = append(
 			errs,
-			fmt.Errorf("file_check.new_file_column is required"),
+			fmt.Errorf("file_check.file_column is required"),
 		)
 	}
 
-	if strings.TrimSpace(d.OldFileCol) == "" {
+	if strings.TrimSpace(d.CompareOffsetMonthsCol) == "" {
 		errs = append(
 			errs,
-			fmt.Errorf("file_check.old_file_column is required"),
+			fmt.Errorf("file_check.compare_offset_months_column is required"),
 		)
 	}
 

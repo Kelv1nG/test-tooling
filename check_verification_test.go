@@ -35,7 +35,7 @@ func TestRunCheckVerificationExactMatch(t *testing.T) {
 			Index:    1,
 			ExcelRow: 2,
 			ID:       "CHK-001",
-			NewFile:  filepath.Join(tempDir, "report_{yyyy}_{mm}_{dd}.xlsx"),
+			File:     filepath.Join(tempDir, "report_{yyyy}_{mm}_{dd}.xlsx"),
 			Rules: []templates.CheckRuleView{
 				{
 					Index:        1,
@@ -65,5 +65,147 @@ func TestRunCheckVerificationExactMatch(t *testing.T) {
 	}
 	if !strings.Contains(rows[0].Rules[0].Detail, "Exact text found at B3.") {
 		t.Fatalf("unexpected rule detail: %q", rows[0].Rules[0].Detail)
+	}
+}
+
+func TestRunCheckVerificationReportsAddedHeader(t *testing.T) {
+	tempDir := t.TempDir()
+	comparePath := filepath.Join(tempDir, "report_2026_04_30.xlsx")
+	currentPath := filepath.Join(tempDir, "report_2026_05_31.xlsx")
+
+	writeHeaderSampleWorkbook(t, comparePath, false)
+	writeHeaderSampleWorkbook(t, currentPath, true)
+
+	rows, summary := runCheckVerification([]templates.CheckRowView{
+		{
+			Index:               1,
+			ID:                  "CHK-001",
+			File:                filepath.Join(tempDir, "report_{yyyy}_{mm}_{dd}.xlsx"),
+			CompareOffsetMonths: -1,
+			Rules: []templates.CheckRuleView{
+				{
+					Index:           1,
+					ID:              "R001",
+					CheckID:         "CHK-001",
+					Name:            "Headers around date anchor",
+					Type:            "header_compare",
+					Enabled:         true,
+					Sheet:           "Report",
+					Anchor:          "date",
+					ParentDirection: "up",
+					MaxHeaderDepth:  "2",
+					RequireOrder:    true,
+				},
+			},
+		},
+	}, time.Date(2026, time.May, 31, 0, 0, 0, 0, time.UTC))
+
+	if summary.Changed != 1 {
+		t.Fatalf("summary.Changed = %d, want 1", summary.Changed)
+	}
+	if summary.Errors != 0 {
+		t.Fatalf("summary.Errors = %d, want 0", summary.Errors)
+	}
+	if rows[0].Rules[0].Status != "Changed" {
+		t.Fatalf("rule status = %q, want Changed", rows[0].Rules[0].Status)
+	}
+	if !strings.Contains(rows[0].Rules[0].Detail, "++ column C") {
+		t.Fatalf("unexpected rule detail: %q", rows[0].Rules[0].Detail)
+	}
+	if strings.Contains(rows[0].Rules[0].Detail, "> value") {
+		t.Fatalf("rule detail should not expose the internal header path: %q", rows[0].Rules[0].Detail)
+	}
+	if !strings.Contains(rows[0].Detail, "++ column C") {
+		t.Fatalf("expected card detail to include added header, got %q", rows[0].Detail)
+	}
+}
+
+func TestRunCheckVerificationReportsRemovedHeader(t *testing.T) {
+	tempDir := t.TempDir()
+	comparePath := filepath.Join(tempDir, "report_2026_04_30.xlsx")
+	currentPath := filepath.Join(tempDir, "report_2026_05_31.xlsx")
+
+	writeHeaderSampleWorkbook(t, comparePath, true)
+	writeHeaderSampleWorkbook(t, currentPath, false)
+
+	rows, summary := runCheckVerification([]templates.CheckRowView{
+		{
+			Index:               1,
+			ID:                  "CHK-001",
+			File:                filepath.Join(tempDir, "report_{yyyy}_{mm}_{dd}.xlsx"),
+			CompareOffsetMonths: -1,
+			Rules: []templates.CheckRuleView{
+				{
+					Index:           1,
+					ID:              "R001",
+					CheckID:         "CHK-001",
+					Name:            "Headers around date anchor",
+					Type:            "header_compare",
+					Enabled:         true,
+					Sheet:           "Report",
+					Anchor:          "date",
+					ParentDirection: "up",
+					MaxHeaderDepth:  "2",
+					RequireOrder:    true,
+				},
+			},
+		},
+	}, time.Date(2026, time.May, 31, 0, 0, 0, 0, time.UTC))
+
+	if summary.Changed != 1 {
+		t.Fatalf("summary.Changed = %d, want 1", summary.Changed)
+	}
+	if summary.Errors != 0 {
+		t.Fatalf("summary.Errors = %d, want 0", summary.Errors)
+	}
+	if rows[0].Rules[0].Status != "Changed" {
+		t.Fatalf("rule status = %q, want Changed", rows[0].Rules[0].Status)
+	}
+	if !strings.Contains(rows[0].Rules[0].Detail, "-- column C") {
+		t.Fatalf("unexpected rule detail: %q", rows[0].Rules[0].Detail)
+	}
+	if strings.Contains(rows[0].Rules[0].Detail, "> value") {
+		t.Fatalf("rule detail should not expose the internal header path: %q", rows[0].Rules[0].Detail)
+	}
+	if !strings.Contains(rows[0].Detail, "-- column C") {
+		t.Fatalf("expected card detail to include removed header, got %q", rows[0].Detail)
+	}
+}
+
+func writeHeaderSampleWorkbook(t *testing.T, path string, includeAddedColumn bool) {
+	t.Helper()
+
+	workbook := excelize.NewFile()
+	defaultSheet := workbook.GetSheetName(workbook.GetActiveSheetIndex())
+	if err := workbook.SetSheetName(defaultSheet, "Report"); err != nil {
+		t.Fatalf("SetSheetName returned error: %v", err)
+	}
+
+	values := map[string]string{
+		"B3": "column A",
+		"C3": "column B",
+		"A4": "date",
+		"B4": "value",
+		"C4": "value",
+		"A5": "date2",
+		"B5": "value2",
+		"C5": "value3",
+	}
+	if includeAddedColumn {
+		values["D3"] = "column C"
+		values["D4"] = "value"
+		values["D5"] = "value4"
+	}
+
+	for cell, value := range values {
+		if err := workbook.SetCellStr("Report", cell, value); err != nil {
+			t.Fatalf("SetCellStr %s returned error: %v", cell, err)
+		}
+	}
+	if err := workbook.SaveAs(path); err != nil {
+		t.Fatalf("SaveAs returned error: %v", err)
+	}
+	if err := workbook.Close(); err != nil {
+		t.Fatalf("Close returned error: %v", err)
 	}
 }

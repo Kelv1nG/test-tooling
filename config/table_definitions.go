@@ -12,11 +12,11 @@ type FileTransferTableDefinition struct {
 }
 
 type FileCheckTableDefinition struct {
-	Sheet      string                        `yaml:"sheet"`
-	IDCol      string                        `yaml:"id_column"`
-	NewFileCol string                        `yaml:"new_file_column"`
-	OldFileCol string                        `yaml:"old_file_column"`
-	Rules      FileCheckRulesTableDefinition `yaml:"rules"`
+	Sheet                  string                        `yaml:"sheet"`
+	IDCol                  string                        `yaml:"id_column"`
+	FileCol                string                        `yaml:"file_column"`
+	CompareOffsetMonthsCol string                        `yaml:"compare_offset_months_column"`
+	Rules                  FileCheckRulesTableDefinition `yaml:"rules"`
 }
 
 type FileCheckRulesTableDefinition struct {
