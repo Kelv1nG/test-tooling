@@ -29,6 +29,14 @@ func TestFileCheckReadRulesFromJSONConfig(t *testing.T) {
 		"true",
 		`{"sheet":"Report","expected_text":"Actual performance from 10/5/2021 to {mm}/{dd}/{yy}"}`,
 	})
+	setRow(t, file, "File Check Rules", 4, []string{
+		"CHK-001",
+		"R003",
+		"Reporting date",
+		"anchor_scan_match",
+		"true",
+		`{"sheet":"Report","anchor":"Reporting dates","direction":"down","select":"last_non_empty_before_blank","expected_text":"{mm}/{dd}/{yy}","compare_as":"date"}`,
+	})
 
 	configs, err := definition.read(file)
 	if err != nil {
@@ -37,8 +45,8 @@ func TestFileCheckReadRulesFromJSONConfig(t *testing.T) {
 	if len(configs) != 1 {
 		t.Fatalf("expected 1 check config, got %d", len(configs))
 	}
-	if len(configs[0].Rules) != 2 {
-		t.Fatalf("expected 2 rules, got %d", len(configs[0].Rules))
+	if len(configs[0].Rules) != 3 {
+		t.Fatalf("expected 3 rules, got %d", len(configs[0].Rules))
 	}
 
 	headerRule := configs[0].Rules[0]
@@ -58,6 +66,17 @@ func TestFileCheckReadRulesFromJSONConfig(t *testing.T) {
 	exactRule := configs[0].Rules[1]
 	if exactRule.ExactText.ExpectedText != "Actual performance from 10/5/2021 to {mm}/{dd}/{yy}" {
 		t.Fatalf("exact text = %q", exactRule.ExactText.ExpectedText)
+	}
+
+	anchorScanRule := configs[0].Rules[2]
+	if anchorScanRule.AnchorScan.Anchor != "Reporting dates" {
+		t.Fatalf("anchor scan anchor = %q", anchorScanRule.AnchorScan.Anchor)
+	}
+	if anchorScanRule.AnchorScan.Direction != "down" {
+		t.Fatalf("anchor scan direction = %q", anchorScanRule.AnchorScan.Direction)
+	}
+	if anchorScanRule.AnchorScan.CompareAs != "date" {
+		t.Fatalf("anchor scan compare_as = %q", anchorScanRule.AnchorScan.CompareAs)
 	}
 }
 
@@ -87,6 +106,20 @@ func TestFileCheckSaveWritesJSONConfig(t *testing.T) {
 						RequireOrder:    true,
 					},
 				},
+				{
+					ID:      "R002",
+					Name:    "Reporting date",
+					Type:    VerificationRuleTypeAnchorScan,
+					Enabled: true,
+					AnchorScan: AnchorScanMatchConfig{
+						Sheet:        "Report",
+						Anchor:       "Reporting dates",
+						Direction:    "down",
+						Select:       AnchorScanSelectLastNonEmptyBeforeBlank,
+						ExpectedText: "{mm}/{dd}/{yy}",
+						CompareAs:    AnchorScanCompareDate,
+					},
+				},
 			},
 		},
 	})
@@ -102,6 +135,16 @@ func TestFileCheckSaveWritesJSONConfig(t *testing.T) {
 	const expected = `{"sheet":"Report","anchor":"Fund Name","parent_direction":"up","max_header_depth":2,"require_order":true}`
 	if configJSON != expected {
 		t.Fatalf("config JSON = %q, want %q", configJSON, expected)
+	}
+
+	anchorScanJSON, err := file.GetCellValue("File Check Rules", "F3")
+	if err != nil {
+		t.Fatalf("GetCellValue returned error: %v", err)
+	}
+
+	const expectedAnchorScan = `{"sheet":"Report","anchor":"Reporting dates","direction":"down","select":"last_non_empty_before_blank","expected_text":"{mm}/{dd}/{yy}","compare_as":"date"}`
+	if anchorScanJSON != expectedAnchorScan {
+		t.Fatalf("anchor scan config JSON = %q, want %q", anchorScanJSON, expectedAnchorScan)
 	}
 }
 

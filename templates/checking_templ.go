@@ -47,7 +47,7 @@ func CheckingTab(data PageData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if data.HasConfig {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"mb-4\"><h2 class=\"text-xl font-semibold text-slate-900\">Verification</h2><p class=\"mt-1 text-sm text-slate-600\">Each file-check config can own multiple verification rules. Header rules compare the current reporting file against the month-offset file; exact-text rules search only the current reporting file.</p></div><div class=\"mb-6 grid gap-4 sm:grid-cols-2\"><div class=\"rounded-[1.5rem] bg-amber-50 px-5 py-4\"><p class=\"text-3xl font-semibold text-slate-900\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"mb-4\"><h2 class=\"text-xl font-semibold text-slate-900\">Verification</h2><p class=\"mt-1 text-sm text-slate-600\">Each file-check config can own multiple verification rules. Header rules compare the current reporting file against the month-offset file; exact-text and anchor-scan rules search only the current reporting file.</p></div><div class=\"mb-6 grid gap-4 sm:grid-cols-2\"><div class=\"rounded-[1.5rem] bg-amber-50 px-5 py-4\"><p class=\"text-3xl font-semibold text-slate-900\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -119,7 +119,7 @@ func CheckingTab(data PageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <details class=\"mt-7 min-w-[18rem] flex-1 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600\"><summary class=\"cursor-pointer list-none font-semibold text-slate-900\"><span>Placeholder list</span> <span class=\"ml-2 text-xs font-normal text-slate-500\">Example values for the validator date</span></summary><p class=\"mt-3 text-sm text-slate-600\">These tokens work in validator file paths and exact-match text.</p><div class=\"mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2\"><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;yyyy&#125;</span><span x-text=\"window.transferTemplateTokenValue('yyyy', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;yy&#125;</span><span x-text=\"window.transferTemplateTokenValue('yy', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;mm&#125;</span><span x-text=\"window.transferTemplateTokenValue('mm', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;m&#125;</span><span x-text=\"window.transferTemplateTokenValue('m', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;dd&#125;</span><span x-text=\"window.transferTemplateTokenValue('dd', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;d&#125;</span><span x-text=\"window.transferTemplateTokenValue('d', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;MMMM&#125;</span><span x-text=\"window.transferTemplateTokenValue('MMMM', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;mmmm&#125;</span><span x-text=\"window.transferTemplateTokenValue('mmmm', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;MMM&#125;</span><span x-text=\"window.transferTemplateTokenValue('MMM', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;mmm&#125;</span><span x-text=\"window.transferTemplateTokenValue('mmm', referenceDate)\" class=\"text-slate-500\"></span></div></div></details></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <details class=\"mt-7 min-w-[18rem] flex-1 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600\"><summary class=\"cursor-pointer list-none font-semibold text-slate-900\"><span>Placeholder list</span> <span class=\"ml-2 text-xs font-normal text-slate-500\">Example values for the validator date</span></summary><p class=\"mt-3 text-sm text-slate-600\">These tokens work in validator file paths and expected rule text.</p><div class=\"mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2\"><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;yyyy&#125;</span><span x-text=\"window.transferTemplateTokenValue('yyyy', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;yy&#125;</span><span x-text=\"window.transferTemplateTokenValue('yy', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;mm&#125;</span><span x-text=\"window.transferTemplateTokenValue('mm', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;m&#125;</span><span x-text=\"window.transferTemplateTokenValue('m', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;dd&#125;</span><span x-text=\"window.transferTemplateTokenValue('dd', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;d&#125;</span><span x-text=\"window.transferTemplateTokenValue('d', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;MMMM&#125;</span><span x-text=\"window.transferTemplateTokenValue('MMMM', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;mmmm&#125;</span><span x-text=\"window.transferTemplateTokenValue('mmmm', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;MMM&#125;</span><span x-text=\"window.transferTemplateTokenValue('MMM', referenceDate)\" class=\"text-slate-500\"></span></div><div class=\"flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs\"><span class=\"text-slate-700\">&#123;mmm&#125;</span><span x-text=\"window.transferTemplateTokenValue('mmm', referenceDate)\" class=\"text-slate-500\"></span></div></div></details></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -534,9 +534,11 @@ func CheckConfigPanel(row CheckRowView) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = CheckRuleEditor(row, CheckRuleView{
-			Index:   len(row.Rules) + 1,
-			Enabled: true,
-			Type:    "exact_text",
+			Index:      len(row.Rules) + 1,
+			Enabled:    true,
+			Type:       "exact_text",
+			ScanSelect: "last_non_empty_before_blank",
+			CompareAs:  "date",
 		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -577,7 +579,7 @@ func CheckRuleEditor(parent CheckRowView, rule CheckRuleView) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(ruleTypeStateExpression(rule.Type))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 229, Col: 129}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 231, Col: 129}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -590,7 +592,7 @@ func CheckRuleEditor(parent CheckRowView, rule CheckRuleView) templ.Component {
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(parent.Index)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 232, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 234, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -603,7 +605,7 @@ func CheckRuleEditor(parent CheckRowView, rule CheckRuleView) templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(rule.ExcelRow)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 233, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 235, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -617,7 +619,7 @@ func CheckRuleEditor(parent CheckRowView, rule CheckRuleView) templ.Component {
 			var templ_7745c5c3_Var32 string
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 236, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 238, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -627,7 +629,7 @@ func CheckRuleEditor(parent CheckRowView, rule CheckRuleView) templ.Component {
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(rule.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 238, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 240, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -669,7 +671,7 @@ func CheckRuleEditor(parent CheckRowView, rule CheckRuleView) templ.Component {
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 244, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 246, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -693,231 +695,304 @@ func CheckRuleEditor(parent CheckRowView, rule CheckRuleView) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</button></summary><div class=\"mt-4 grid gap-3 lg:grid-cols-5\"><label><div class=\"text-xs font-semibold uppercase text-slate-500\">Rule ID</div><input name=\"ruleID\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</button></summary><div class=\"mt-4 grid gap-3 lg:grid-cols-5\"><div><input type=\"hidden\" name=\"ruleID\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(rule.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 257, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 258, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Name</div><input name=\"ruleName\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\"><div class=\"text-xs font-semibold uppercase text-slate-500\">Rule ID</div><div title=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var38 string
-		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Name)
+		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(rule.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 261, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 260, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Type</div><select x-model=\"ruleType\" name=\"ruleType\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"header_compare\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\" data-rule-id-display class=\"mt-1 flex min-h-[2.875rem] items-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 font-mono text-sm font-semibold text-slate-700\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if rule.Type == "header_compare" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, " selected")
+		if rule.ID != "" {
+			var templ_7745c5c3_Var39 string
+			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(rule.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 262, Col: 15}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "Generated on add")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, ">Header compare</option> <option value=\"exact_text\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if rule.Type == "exact_text" || rule.Type == "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, " selected")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, ">Exact text</option></select></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Enabled</div><select name=\"ruleEnabled\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"true\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if rule.Enabled {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, " selected")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, ">Yes</option> <option value=\"false\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if !rule.Enabled {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, " selected")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, ">No</option></select></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Sheet / Index</div><input name=\"ruleSheet\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var39 string
-		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Sheet)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 279, Col: 46}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "\" placeholder=\"Report or 2\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label></div><div x-show=\"ruleType === 'header_compare'\" class=\"mt-3 grid gap-3 lg:grid-cols-4\"><label><div class=\"text-xs font-semibold uppercase text-slate-500\">Anchor</div><input name=\"ruleAnchor\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</div></div><label><div class=\"text-xs font-semibold uppercase text-slate-500\">Name</div><input name=\"ruleName\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var40 string
-		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Anchor)
+		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 286, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 270, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Direction</div><select name=\"ruleParentDirection\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Type</div><select x-model=\"ruleType\" name=\"ruleType\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"header_compare\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if rule.ParentDirection == "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, " selected")
+		if rule.Type == "header_compare" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, ">Select</option> <option value=\"up\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, ">Header compare</option> <option value=\"exact_text\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if rule.ParentDirection == "up" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, " selected")
+		if rule.Type == "exact_text" || rule.Type == "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, ">Up</option> <option value=\"down\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, ">Exact text</option> <option value=\"anchor_scan_match\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if rule.ParentDirection == "down" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, " selected")
+		if rule.Type == "anchor_scan_match" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, ">Down</option> <option value=\"left\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, ">Anchor scan match</option></select></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Enabled</div><select name=\"ruleEnabled\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"true\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if rule.ParentDirection == "left" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, " selected")
+		if rule.Enabled {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, ">Left</option> <option value=\"right\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, ">Yes</option> <option value=\"false\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if rule.ParentDirection == "right" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, " selected")
+		if !rule.Enabled {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, ">Right</option></select></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Depth</div><input name=\"ruleMaxHeaderDepth\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, ">No</option></select></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Sheet / Index</div><input name=\"ruleSheet\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var41 string
-		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(rule.MaxHeaderDepth)
+		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Sheet)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 300, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 289, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Ordered</div><select name=\"ruleRequireOrder\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"false\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if !rule.RequireOrder {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, " selected")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, ">No</option> <option value=\"true\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if rule.RequireOrder {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, " selected")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, ">Yes</option></select></label></div><div x-show=\"ruleType === 'exact_text'\" class=\"mt-3\"><label><div class=\"text-xs font-semibold uppercase text-slate-500\">Expected Text</div><div x-data=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\" placeholder=\"Report or 2\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label></div><div x-show=\"ruleType === 'header_compare' || ruleType === 'anchor_scan_match'\" class=\"mt-3 grid gap-3 lg:grid-cols-4\"><label><div class=\"text-xs font-semibold uppercase text-slate-500\">Anchor</div><input name=\"ruleAnchor\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var42 string
-		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(rule.ExpectedText))
+		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Anchor)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 314, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 296, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"ruleExpectedText\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <label><div class=\"text-xs font-semibold uppercase text-slate-500\">Direction</div><select name=\"ruleParentDirection\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.ParentDirection == "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, ">Select</option> <option value=\"up\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.ParentDirection == "up" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, ">Up</option> <option value=\"down\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.ParentDirection == "down" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, ">Down</option> <option value=\"left\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.ParentDirection == "left" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, ">Left</option> <option value=\"right\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.ParentDirection == "right" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, ">Right</option></select></label> <label x-show=\"ruleType === 'header_compare'\"><div class=\"text-xs font-semibold uppercase text-slate-500\">Depth</div><input name=\"ruleMaxHeaderDepth\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var43 string
-		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(rule.ExpectedText)
+		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(rule.MaxHeaderDepth)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 315, Col: 98}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 310, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "\" placeholder=\"Actual performance from 10/5/2021 to {mm}/{dd}/{yy}\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></label></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label> <label x-show=\"ruleType === 'header_compare'\"><div class=\"text-xs font-semibold uppercase text-slate-500\">Ordered</div><select name=\"ruleRequireOrder\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"false\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !rule.RequireOrder {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, ">No</option> <option value=\"true\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.RequireOrder {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, ">Yes</option></select></label> <label x-show=\"ruleType === 'anchor_scan_match'\"><div class=\"text-xs font-semibold uppercase text-slate-500\">Scan Result</div><select name=\"ruleScanSelect\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"last_non_empty_before_blank\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.ScanSelect == "last_non_empty_before_blank" || rule.ScanSelect == "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, ">Last value before blank</option></select></label> <label x-show=\"ruleType === 'anchor_scan_match'\"><div class=\"text-xs font-semibold uppercase text-slate-500\">Compare As</div><select name=\"ruleCompareAs\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><option value=\"date\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.CompareAs == "date" || rule.CompareAs == "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, ">Date</option> <option value=\"exact_text\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if rule.CompareAs == "exact_text" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, " selected")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, ">Exact text</option></select></label></div><div x-show=\"ruleType === 'exact_text' || ruleType === 'anchor_scan_match'\" class=\"mt-3\"><label><div class=\"text-xs font-semibold uppercase text-slate-500\" x-text=\"ruleType === 'anchor_scan_match' ? 'Expected Value' : 'Expected Text'\">Expected Text</div><div x-data=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var44 string
+		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(rule.ExpectedText))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 337, Col: 64}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"ruleExpectedText\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var45 string
+		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(rule.ExpectedText)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 338, Col: 98}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "\" placeholder=\"Actual performance from 10/5/2021 to {mm}/{dd}/{yy}\" class=\"mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></label></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if rule.Detail != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<p class=\"mt-3 whitespace-pre-line rounded-2xl bg-white px-3 py-2 font-mono text-xs leading-5 text-slate-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<p class=\"mt-3 whitespace-pre-line rounded-2xl bg-white px-3 py-2 font-mono text-xs leading-5 text-slate-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var44 string
-			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Detail)
+			var templ_7745c5c3_Var46 string
+			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(rule.Detail)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 322, Col: 126}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/checking.templ`, Line: 345, Col: 126}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</details>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</details>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

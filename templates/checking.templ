@@ -11,7 +11,7 @@ templ CheckingTab(data PageData) {
 		if data.HasConfig {
 			<div class="mb-4">
 				<h2 class="text-xl font-semibold text-slate-900">Verification</h2>
-				<p class="mt-1 text-sm text-slate-600">Each file-check config can own multiple verification rules. Header rules compare the current reporting file against the month-offset file; exact-text rules search only the current reporting file.</p>
+				<p class="mt-1 text-sm text-slate-600">Each file-check config can own multiple verification rules. Header rules compare the current reporting file against the month-offset file; exact-text and anchor-scan rules search only the current reporting file.</p>
 			</div>
 
 			<div class="mb-6 grid gap-4 sm:grid-cols-2">
@@ -56,7 +56,7 @@ templ CheckingTab(data PageData) {
 							<span>Placeholder list</span>
 							<span class="ml-2 text-xs font-normal text-slate-500">Example values for the validator date</span>
 						</summary>
-						<p class="mt-3 text-sm text-slate-600">These tokens work in validator file paths and exact-match text.</p>
+						<p class="mt-3 text-sm text-slate-600">These tokens work in validator file paths and expected rule text.</p>
 						<div class="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2">
 							<div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs"><span class="text-slate-700">&#123;yyyy&#125;</span><span x-text="window.transferTemplateTokenValue('yyyy', referenceDate)" class="text-slate-500"></span></div>
 							<div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs"><span class="text-slate-700">&#123;yy&#125;</span><span x-text="window.transferTemplateTokenValue('yy', referenceDate)" class="text-slate-500"></span></div>
@@ -215,6 +215,8 @@ templ CheckConfigPanel(row CheckRowView) {
 					Index: len(row.Rules) + 1,
 					Enabled: true,
 					Type: "exact_text",
+					ScanSelect: "last_non_empty_before_blank",
+					CompareAs: "date",
 				})
 			</template>
 
@@ -252,10 +254,17 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 		</summary>
 
 		<div class="mt-4 grid gap-3 lg:grid-cols-5">
-			<label>
+			<div>
+				<input type="hidden" name="ruleID" value={ rule.ID }/>
 				<div class="text-xs font-semibold uppercase text-slate-500">Rule ID</div>
-				<input name="ruleID" value={ rule.ID } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
-			</label>
+				<div title={ rule.ID } data-rule-id-display class="mt-1 flex min-h-[2.875rem] items-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 font-mono text-sm font-semibold text-slate-700">
+					if rule.ID != "" {
+						{ rule.ID }
+					} else {
+						Generated on add
+					}
+				</div>
+			</div>
 			<label>
 				<div class="text-xs font-semibold uppercase text-slate-500">Name</div>
 				<input name="ruleName" value={ rule.Name } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
@@ -265,6 +274,7 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 				<select x-model="ruleType" name="ruleType" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
 					<option value="header_compare" selected?={ rule.Type == "header_compare" }>Header compare</option>
 					<option value="exact_text" selected?={ rule.Type == "exact_text" || rule.Type == "" }>Exact text</option>
+					<option value="anchor_scan_match" selected?={ rule.Type == "anchor_scan_match" }>Anchor scan match</option>
 				</select>
 			</label>
 			<label>
@@ -280,7 +290,7 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 			</label>
 		</div>
 
-		<div x-show="ruleType === 'header_compare'" class="mt-3 grid gap-3 lg:grid-cols-4">
+		<div x-show="ruleType === 'header_compare' || ruleType === 'anchor_scan_match'" class="mt-3 grid gap-3 lg:grid-cols-4">
 			<label>
 				<div class="text-xs font-semibold uppercase text-slate-500">Anchor</div>
 				<input name="ruleAnchor" value={ rule.Anchor } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
@@ -295,22 +305,35 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 					<option value="right" selected?={ rule.ParentDirection == "right" }>Right</option>
 				</select>
 			</label>
-			<label>
+			<label x-show="ruleType === 'header_compare'">
 				<div class="text-xs font-semibold uppercase text-slate-500">Depth</div>
 				<input name="ruleMaxHeaderDepth" value={ rule.MaxHeaderDepth } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 			</label>
-			<label>
+			<label x-show="ruleType === 'header_compare'">
 				<div class="text-xs font-semibold uppercase text-slate-500">Ordered</div>
 				<select name="ruleRequireOrder" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
 					<option value="false" selected?={ !rule.RequireOrder }>No</option>
 					<option value="true" selected?={ rule.RequireOrder }>Yes</option>
 				</select>
 			</label>
+			<label x-show="ruleType === 'anchor_scan_match'">
+				<div class="text-xs font-semibold uppercase text-slate-500">Scan Result</div>
+				<select name="ruleScanSelect" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
+					<option value="last_non_empty_before_blank" selected?={ rule.ScanSelect == "last_non_empty_before_blank" || rule.ScanSelect == "" }>Last value before blank</option>
+				</select>
+			</label>
+			<label x-show="ruleType === 'anchor_scan_match'">
+				<div class="text-xs font-semibold uppercase text-slate-500">Compare As</div>
+				<select name="ruleCompareAs" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
+					<option value="date" selected?={ rule.CompareAs == "date" || rule.CompareAs == "" }>Date</option>
+					<option value="exact_text" selected?={ rule.CompareAs == "exact_text" }>Exact text</option>
+				</select>
+			</label>
 		</div>
 
-		<div x-show="ruleType === 'exact_text'" class="mt-3">
+		<div x-show="ruleType === 'exact_text' || ruleType === 'anchor_scan_match'" class="mt-3">
 			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Expected Text</div>
+				<div class="text-xs font-semibold uppercase text-slate-500" x-text="ruleType === 'anchor_scan_match' ? 'Expected Value' : 'Expected Text'">Expected Text</div>
 				<div x-data={ transferPathFieldExpression(rule.ExpectedText) }>
 					<input x-model="value" x-bind:title="value" name="ruleExpectedText" value={ rule.ExpectedText } placeholder="Actual performance from 10/5/2021 to {mm}/{dd}/{yy}" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 					<p x-cloak x-show="window.transferTemplateHasPlaceholder(value)" x-text="window.transferTemplatePreview(value, referenceDate)" class="mt-2 font-mono text-[11px] text-slate-500"></p>

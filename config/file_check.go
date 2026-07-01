@@ -262,6 +262,10 @@ func parseVerificationRule(
 		exactText, exactErrs := parseExactTextRule(definition, excelRow, raw)
 		errs = append(errs, exactErrs...)
 		rule.ExactText = exactText
+	case VerificationRuleTypeAnchorScan:
+		anchorScan, anchorScanErrs := parseAnchorScanRule(definition, excelRow, raw)
+		errs = append(errs, anchorScanErrs...)
+		rule.AnchorScan = anchorScan
 	}
 
 	if len(errs) > 0 {
@@ -277,8 +281,15 @@ func parseVerificationRuleType(value string) (VerificationRuleType, error) {
 		return VerificationRuleTypeHeaderCompare, nil
 	case VerificationRuleTypeExactText:
 		return VerificationRuleTypeExactText, nil
+	case VerificationRuleTypeAnchorScan:
+		return VerificationRuleTypeAnchorScan, nil
 	default:
-		return "", fmt.Errorf("must be one of %s or %s", VerificationRuleTypeHeaderCompare, VerificationRuleTypeExactText)
+		return "", fmt.Errorf(
+			"must be one of %s, %s, or %s",
+			VerificationRuleTypeHeaderCompare,
+			VerificationRuleTypeExactText,
+			VerificationRuleTypeAnchorScan,
+		)
 	}
 }
 
@@ -342,6 +353,55 @@ func parseExactTextRule(
 	}
 
 	return exactText, errs
+}
+
+func parseAnchorScanRule(
+	definition FileCheckRulesTableDefinition,
+	excelRow int,
+	raw rawVerificationRule,
+) (AnchorScanMatchConfig, []error) {
+	var errs []error
+	var anchorScan AnchorScanMatchConfig
+
+	errs = append(errs, decodeRuleConfigJSON(definition, excelRow, raw.configJSON, &anchorScan, VerificationRuleTypeAnchorScan)...)
+	if len(errs) > 0 {
+		return anchorScan, errs
+	}
+
+	anchorScan.Sheet = strings.TrimSpace(anchorScan.Sheet)
+	anchorScan.Anchor = strings.TrimSpace(anchorScan.Anchor)
+	anchorScan.Direction = strings.TrimSpace(anchorScan.Direction)
+	anchorScan.Select = strings.TrimSpace(anchorScan.Select)
+	anchorScan.CompareAs = strings.TrimSpace(anchorScan.CompareAs)
+
+	if anchorScan.Sheet == "" {
+		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeAnchorScan, "sheet"))
+	}
+	if anchorScan.Anchor == "" {
+		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeAnchorScan, "anchor"))
+	}
+	if anchorScan.Direction == "" {
+		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeAnchorScan, "direction"))
+	} else if !headersearch.Direction(anchorScan.Direction).Valid() {
+		errs = append(errs, fmt.Errorf("sheet %q, row %d: field %q in column %q must be one of up, down, left, right", definition.Sheet, excelRow, "direction", definition.ConfigCol))
+	}
+	if anchorScan.Select == "" {
+		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeAnchorScan, "select"))
+	} else if anchorScan.Select != AnchorScanSelectLastNonEmptyBeforeBlank {
+		errs = append(errs, fmt.Errorf("sheet %q, row %d: field %q in column %q must be %q", definition.Sheet, excelRow, "select", definition.ConfigCol, AnchorScanSelectLastNonEmptyBeforeBlank))
+	}
+	if strings.TrimSpace(anchorScan.ExpectedText) == "" {
+		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeAnchorScan, "expected_text"))
+	} else if err := ValidateTemplateText(anchorScan.ExpectedText); err != nil {
+		errs = append(errs, fmt.Errorf("sheet %q, row %d: field %q in column %q has an invalid expected-text template: %v", definition.Sheet, excelRow, "expected_text", definition.ConfigCol, err))
+	}
+	if anchorScan.CompareAs == "" {
+		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeAnchorScan, "compare_as"))
+	} else if anchorScan.CompareAs != AnchorScanCompareExactText && anchorScan.CompareAs != AnchorScanCompareDate {
+		errs = append(errs, fmt.Errorf("sheet %q, row %d: field %q in column %q must be one of %q or %q", definition.Sheet, excelRow, "compare_as", definition.ConfigCol, AnchorScanCompareExactText, AnchorScanCompareDate))
+	}
+
+	return anchorScan, errs
 }
 
 func decodeRuleConfigJSON(

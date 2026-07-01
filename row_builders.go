@@ -116,6 +116,13 @@ func buildCheckRuleRows(
 		case config.VerificationRuleTypeExactText:
 			row.Sheet = rule.ExactText.Sheet
 			row.ExpectedText = rule.ExactText.ExpectedText
+		case config.VerificationRuleTypeAnchorScan:
+			row.Sheet = rule.AnchorScan.Sheet
+			row.Anchor = rule.AnchorScan.Anchor
+			row.ParentDirection = rule.AnchorScan.Direction
+			row.ScanSelect = rule.AnchorScan.Select
+			row.ExpectedText = rule.AnchorScan.ExpectedText
+			row.CompareAs = rule.AnchorScan.CompareAs
 		}
 
 		rows = append(rows, row)
@@ -191,6 +198,15 @@ func buildVerificationRules(
 			rule.ExactText = config.ExactMatchCheckConfig{
 				Sheet:        row.Sheet,
 				ExpectedText: row.ExpectedText,
+			}
+		case config.VerificationRuleTypeAnchorScan:
+			rule.AnchorScan = config.AnchorScanMatchConfig{
+				Sheet:        row.Sheet,
+				Anchor:       row.Anchor,
+				Direction:    row.ParentDirection,
+				Select:       row.ScanSelect,
+				ExpectedText: row.ExpectedText,
+				CompareAs:    row.CompareAs,
 			}
 		}
 

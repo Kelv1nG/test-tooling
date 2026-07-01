@@ -85,7 +85,9 @@ func parseCheckRowsForm(
 			parentDirections: values["ruleParentDirection"],
 			maxHeaderDepths:  values["ruleMaxHeaderDepth"],
 			requireOrders:    values["ruleRequireOrder"],
+			scanSelects:      values["ruleScanSelect"],
 			expectedTexts:    values["ruleExpectedText"],
+			compareAs:        values["ruleCompareAs"],
 		},
 	}
 
@@ -100,6 +102,7 @@ func parseCheckRowsForm(
 	rows := make([]templates.CheckRowView, 0, len(form.files))
 	rowOffsetsByIndex := make(map[int]int, len(form.files))
 	usedCheckIDs := collectUsedCheckIDs(form.ids)
+	usedRuleIDsByParentIndex := collectUsedRuleIDsByParentIndex(form.rules)
 	var errs config.ValidationErrors
 
 	for index := range form.files {
@@ -159,6 +162,14 @@ func parseCheckRowsForm(
 		parent := &rows[parentOffset]
 		rule, ruleErrs := parseCheckRuleForm(form.rules, index, parent.ID)
 		errs = append(errs, ruleErrs...)
+		if rule.ID == "" {
+			usedRuleIDs := usedRuleIDsByParentIndex[parentIndex]
+			if usedRuleIDs == nil {
+				usedRuleIDs = map[string]struct{}{}
+				usedRuleIDsByParentIndex[parentIndex] = usedRuleIDs
+			}
+			rule.ID = nextGeneratedRuleID(usedRuleIDs, len(parent.Rules)+1)
+		}
 		parent.Rules = append(parent.Rules, rule)
 	}
 
@@ -199,6 +210,51 @@ func nextGeneratedCheckID(
 
 	for counter := seed; ; counter++ {
 		id := fmt.Sprintf("CHECK-%03d", counter)
+		if _, exists := used[id]; exists {
+			continue
+		}
+		used[id] = struct{}{}
+		return id
+	}
+}
+
+func collectUsedRuleIDsByParentIndex(
+	form checkRulesForm,
+) map[int]map[string]struct{} {
+	usedByParent := make(map[int]map[string]struct{})
+
+	for index, id := range form.ids {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			continue
+		}
+
+		parentIndex, err := strconv.Atoi(strings.TrimSpace(form.parentIndexes[index]))
+		if err != nil {
+			continue
+		}
+
+		used := usedByParent[parentIndex]
+		if used == nil {
+			used = map[string]struct{}{}
+			usedByParent[parentIndex] = used
+		}
+		used[id] = struct{}{}
+	}
+
+	return usedByParent
+}
+
+func nextGeneratedRuleID(
+	used map[string]struct{},
+	seed int,
+) string {
+	if seed < 1 {
+		seed = 1
+	}
+
+	for counter := seed; ; counter++ {
+		id := fmt.Sprintf("R%03d", counter)
 		if _, exists := used[id]; exists {
 			continue
 		}
@@ -276,7 +332,9 @@ type checkRulesForm struct {
 	parentDirections []string
 	maxHeaderDepths  []string
 	requireOrders    []string
+	scanSelects      []string
 	expectedTexts    []string
+	compareAs        []string
 }
 
 func (f checkRulesForm) validateLengths() error {
@@ -291,7 +349,9 @@ func (f checkRulesForm) validateLengths() error {
 		len(f.parentDirections) != length ||
 		len(f.maxHeaderDepths) != length ||
 		len(f.requireOrders) != length ||
-		len(f.expectedTexts) != length {
+		len(f.scanSelects) != length ||
+		len(f.expectedTexts) != length ||
+		len(f.compareAs) != length {
 		return fmt.Errorf("mismatched verification rule fields")
 	}
 
@@ -392,12 +452,11 @@ func parseCheckRuleForm(
 		ParentDirection: strings.TrimSpace(form.parentDirections[index]),
 		MaxHeaderDepth:  strings.TrimSpace(form.maxHeaderDepths[index]),
 		RequireOrder:    requireOrder,
+		ScanSelect:      strings.TrimSpace(form.scanSelects[index]),
 		ExpectedText:    form.expectedTexts[index],
+		CompareAs:       strings.TrimSpace(form.compareAs[index]),
 	}
 
-	if rule.ID == "" {
-		errs = append(errs, fmt.Errorf("verification rule %d requires a rule id", index+1))
-	}
 	if rule.Type == "" {
 		errs = append(errs, fmt.Errorf("verification rule %d requires a rule type", index+1))
 	}
@@ -407,9 +466,11 @@ func parseCheckRuleForm(
 		errs = append(errs, validateHeaderCheckForm(index+1, rule.Sheet, rule.Anchor, rule.ParentDirection, rule.MaxHeaderDepth, rule.RequireOrder)...)
 	case config.VerificationRuleTypeExactText:
 		errs = append(errs, validateExactMatchForm(index+1, rule.Sheet, rule.ExpectedText)...)
+	case config.VerificationRuleTypeAnchorScan:
+		errs = append(errs, validateAnchorScanForm(index+1, rule.Sheet, rule.Anchor, rule.ParentDirection, rule.ScanSelect, rule.ExpectedText, rule.CompareAs)...)
 	default:
 		if rule.Type != "" {
-			errs = append(errs, fmt.Errorf("verification rule %d type must be header_compare or exact_text", index+1))
+			errs = append(errs, fmt.Errorf("verification rule %d type must be header_compare, exact_text, or anchor_scan_match", index+1))
 		}
 	}
 
@@ -468,6 +529,56 @@ func validateExactMatchForm(
 		errs = append(errs, fmt.Errorf("check row %d requires exact-match text", rowIndex))
 	} else if err := config.ValidateTemplateText(expectedText); err != nil {
 		errs = append(errs, fmt.Errorf("check row %d has an invalid exact-match template: %v", rowIndex, err))
+	}
+
+	return errs
+}
+
+func validateAnchorScanForm(
+	rowIndex int,
+	sheet string,
+	anchor string,
+	direction string,
+	scanSelect string,
+	expectedText string,
+	compareAs string,
+) []error {
+	if sheet == "" &&
+		anchor == "" &&
+		direction == "" &&
+		scanSelect == "" &&
+		strings.TrimSpace(expectedText) == "" &&
+		compareAs == "" {
+		return nil
+	}
+
+	var errs []error
+
+	if sheet == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires an anchor-scan sheet", rowIndex))
+	}
+	if anchor == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires an anchor-scan anchor", rowIndex))
+	}
+	if direction == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires an anchor-scan direction", rowIndex))
+	} else if !headersearch.Direction(direction).Valid() {
+		errs = append(errs, fmt.Errorf("check row %d has an invalid anchor-scan direction", rowIndex))
+	}
+	if scanSelect == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires an anchor-scan result selector", rowIndex))
+	} else if scanSelect != config.AnchorScanSelectLastNonEmptyBeforeBlank {
+		errs = append(errs, fmt.Errorf("check row %d has an invalid anchor-scan result selector", rowIndex))
+	}
+	if strings.TrimSpace(expectedText) == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires anchor-scan expected text", rowIndex))
+	} else if err := config.ValidateTemplateText(expectedText); err != nil {
+		errs = append(errs, fmt.Errorf("check row %d has an invalid anchor-scan template: %v", rowIndex, err))
+	}
+	if compareAs == "" {
+		errs = append(errs, fmt.Errorf("check row %d requires an anchor-scan comparison mode", rowIndex))
+	} else if compareAs != config.AnchorScanCompareExactText && compareAs != config.AnchorScanCompareDate {
+		errs = append(errs, fmt.Errorf("check row %d has an invalid anchor-scan comparison mode", rowIndex))
 	}
 
 	return errs

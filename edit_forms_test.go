@@ -67,7 +67,9 @@ func TestParseCheckRowsFormAllowsExactMatchWithoutCompareOffset(t *testing.T) {
 		"ruleParentDirection":      []string{""},
 		"ruleMaxHeaderDepth":       []string{""},
 		"ruleRequireOrder":         []string{"false"},
+		"ruleScanSelect":           []string{""},
 		"ruleExpectedText":         []string{"Actual performance from 10/5/2021 to {mm}/{dd}/{yy}"},
+		"ruleCompareAs":            []string{""},
 	}, referenceDate)
 	if err != nil {
 		t.Fatalf("parseCheckRowsForm returned error: %v", err)
@@ -131,7 +133,9 @@ func TestParseCheckRowsFormRequiresCompareOffsetForHeaderComparison(t *testing.T
 		"ruleParentDirection":      []string{"up"},
 		"ruleMaxHeaderDepth":       []string{"1"},
 		"ruleRequireOrder":         []string{"false"},
+		"ruleScanSelect":           []string{""},
 		"ruleExpectedText":         []string{""},
+		"ruleCompareAs":            []string{""},
 	}, referenceDate)
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -139,5 +143,92 @@ func TestParseCheckRowsFormRequiresCompareOffsetForHeaderComparison(t *testing.T
 
 	if !strings.Contains(err.Error(), "requires a non-zero compare offset when a header comparison rule is enabled") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestParseCheckRowsFormAllowsAnchorScanWithoutCompareOffset(t *testing.T) {
+	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
+
+	rows, err := parseCheckRowsForm(map[string][]string{
+		"checkExcelRow":            []string{"2"},
+		"checkID":                  []string{"CHK-001"},
+		"checkFile":                []string{`/tmp/report_{yyyy}_{mm}_{dd}.xlsx`},
+		"checkCompareOffsetMonths": []string{"0"},
+		"ruleParentIndex":          []string{"1"},
+		"ruleExcelRow":             []string{"2"},
+		"ruleID":                   []string{"R001"},
+		"ruleName":                 []string{"Reporting date"},
+		"ruleType":                 []string{"anchor_scan_match"},
+		"ruleEnabled":              []string{"true"},
+		"ruleSheet":                []string{"Report"},
+		"ruleAnchor":               []string{"Reporting dates"},
+		"ruleParentDirection":      []string{"down"},
+		"ruleMaxHeaderDepth":       []string{""},
+		"ruleRequireOrder":         []string{"false"},
+		"ruleScanSelect":           []string{"last_non_empty_before_blank"},
+		"ruleExpectedText":         []string{"{mm}/{dd}/{yy}"},
+		"ruleCompareAs":            []string{"date"},
+	}, referenceDate)
+	if err != nil {
+		t.Fatalf("parseCheckRowsForm returned error: %v", err)
+	}
+
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row, got %d", len(rows))
+	}
+	if rows[0].CompareOffsetMonths != 0 {
+		t.Fatalf("expected compare offset to stay 0, got %d", rows[0].CompareOffsetMonths)
+	}
+	if len(rows[0].Rules) != 1 {
+		t.Fatalf("expected 1 rule, got %d", len(rows[0].Rules))
+	}
+
+	rule := rows[0].Rules[0]
+	if rule.Anchor != "Reporting dates" {
+		t.Fatalf("anchor = %q", rule.Anchor)
+	}
+	if rule.ParentDirection != "down" {
+		t.Fatalf("direction = %q", rule.ParentDirection)
+	}
+	if rule.ScanSelect != "last_non_empty_before_blank" {
+		t.Fatalf("scan selector = %q", rule.ScanSelect)
+	}
+	if rule.CompareAs != "date" {
+		t.Fatalf("compare_as = %q", rule.CompareAs)
+	}
+}
+
+func TestParseCheckRowsFormGeneratesMissingRuleID(t *testing.T) {
+	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
+
+	rows, err := parseCheckRowsForm(map[string][]string{
+		"checkExcelRow":            []string{"2"},
+		"checkID":                  []string{"CHK-001"},
+		"checkFile":                []string{`/tmp/report_{yyyy}_{mm}_{dd}.xlsx`},
+		"checkCompareOffsetMonths": []string{"0"},
+		"ruleParentIndex":          []string{"1", "1"},
+		"ruleExcelRow":             []string{"2", "0"},
+		"ruleID":                   []string{"R001", ""},
+		"ruleName":                 []string{"Performance phrase", "Second phrase"},
+		"ruleType":                 []string{"exact_text", "exact_text"},
+		"ruleEnabled":              []string{"true", "true"},
+		"ruleSheet":                []string{"Report", "Report"},
+		"ruleAnchor":               []string{"", ""},
+		"ruleParentDirection":      []string{"", ""},
+		"ruleMaxHeaderDepth":       []string{"", ""},
+		"ruleRequireOrder":         []string{"false", "false"},
+		"ruleScanSelect":           []string{"", ""},
+		"ruleExpectedText":         []string{"Actual performance from 10/5/2021 to {mm}/{dd}/{yy}", "Report date {mm}/{dd}/{yy}"},
+		"ruleCompareAs":            []string{"", ""},
+	}, referenceDate)
+	if err != nil {
+		t.Fatalf("parseCheckRowsForm returned error: %v", err)
+	}
+
+	if len(rows) != 1 || len(rows[0].Rules) != 2 {
+		t.Fatalf("expected 1 row with 2 rules, got %+v", rows)
+	}
+	if rows[0].Rules[1].ID != "R002" {
+		t.Fatalf("generated rule id = %q, want R002", rows[0].Rules[1].ID)
 	}
 }

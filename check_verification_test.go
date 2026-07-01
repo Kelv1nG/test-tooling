@@ -68,6 +68,74 @@ func TestRunCheckVerificationExactMatch(t *testing.T) {
 	}
 }
 
+func TestRunCheckVerificationAnchorScanMatchDate(t *testing.T) {
+	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
+	tempDir := t.TempDir()
+	workbookPath := filepath.Join(tempDir, "report_2026_06_30.xlsx")
+	workbook := excelize.NewFile()
+	defaultSheet := workbook.GetSheetName(workbook.GetActiveSheetIndex())
+	if err := workbook.SetSheetName(defaultSheet, "Report"); err != nil {
+		t.Fatalf("SetSheetName returned error: %v", err)
+	}
+
+	values := map[string]string{
+		"A1": "Reporting dates",
+		"A2": "6/28/2026",
+		"A3": "6/29/2026",
+		"A4": "6/30/2026",
+		"A6": "unrelated section",
+	}
+	for cell, value := range values {
+		if err := workbook.SetCellStr("Report", cell, value); err != nil {
+			t.Fatalf("SetCellStr %s returned error: %v", cell, err)
+		}
+	}
+	if err := workbook.SaveAs(workbookPath); err != nil {
+		t.Fatalf("SaveAs returned error: %v", err)
+	}
+	if err := workbook.Close(); err != nil {
+		t.Fatalf("Close returned error: %v", err)
+	}
+
+	rows, summary := runCheckVerification([]templates.CheckRowView{
+		{
+			Index:    1,
+			ExcelRow: 2,
+			ID:       "CHK-001",
+			File:     filepath.Join(tempDir, "report_{yyyy}_{mm}_{dd}.xlsx"),
+			Rules: []templates.CheckRuleView{
+				{
+					Index:           1,
+					ID:              "R001",
+					CheckID:         "CHK-001",
+					Name:            "Reporting date",
+					Type:            "anchor_scan_match",
+					Enabled:         true,
+					Sheet:           "Report",
+					Anchor:          "Reporting dates",
+					ParentDirection: "down",
+					ScanSelect:      "last_non_empty_before_blank",
+					ExpectedText:    "{mm}/{dd}/{yy}",
+					CompareAs:       "date",
+				},
+			},
+		},
+	}, referenceDate)
+
+	if summary.Matched != 1 {
+		t.Fatalf("summary.Matched = %d, want 1", summary.Matched)
+	}
+	if summary.Errors != 0 {
+		t.Fatalf("summary.Errors = %d, want 0", summary.Errors)
+	}
+	if rows[0].Rules[0].Status != "Matched" {
+		t.Fatalf("rule status = %q, want Matched", rows[0].Rules[0].Status)
+	}
+	if !strings.Contains(rows[0].Rules[0].Detail, "A4") {
+		t.Fatalf("expected rule detail to include selected cell, got %q", rows[0].Rules[0].Detail)
+	}
+}
+
 func TestRunCheckVerificationReportsAddedHeader(t *testing.T) {
 	tempDir := t.TempDir()
 	comparePath := filepath.Join(tempDir, "report_2026_04_30.xlsx")

@@ -65,7 +65,9 @@ type CheckRuleView struct {
 	ParentDirection string
 	MaxHeaderDepth  string
 	RequireOrder    bool
+	ScanSelect      string
 	ExpectedText    string
+	CompareAs       string
 	Status          string
 	Badge           string
 	Detail          string

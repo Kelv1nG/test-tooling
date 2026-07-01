@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -108,6 +110,8 @@ func runCheckConfigVerification(
 			runHeaderComparisonRule(rule, compareWorkbook, currentWorkbook, summary)
 		case config.VerificationRuleTypeExactText:
 			runExactTextRule(rule, currentWorkbook, referenceDate, summary)
+		case config.VerificationRuleTypeAnchorScan:
+			runAnchorScanRule(rule, currentWorkbook, referenceDate, summary)
 		default:
 			markRuleError(rule, summary, fmt.Sprintf("unsupported rule type %q", rule.Type))
 		}
@@ -204,6 +208,184 @@ func runExactTextRule(
 	}
 
 	markRuleChanged(rule, summary, "Exact text not found in the current file.")
+}
+
+func runAnchorScanRule(
+	rule *templates.CheckRuleView,
+	newWorkbook *excelize.File,
+	referenceDate time.Time,
+	summary *templates.CheckSummaryView,
+) {
+	expectedText, err := config.ResolveTemplateText(rule.ExpectedText, referenceDate)
+	if err != nil {
+		markRuleError(rule, summary, fmt.Sprintf("resolve anchor-scan template: %v", err))
+		return
+	}
+
+	match, found, err := sheetsearch.FindAnchorScanValue(
+		newWorkbook,
+		sheetsearch.AnchorScanOptions{
+			Sheet:     rule.Sheet,
+			Anchor:    rule.Anchor,
+			Direction: rule.ParentDirection,
+			Select:    rule.ScanSelect,
+		},
+	)
+	if err != nil {
+		markRuleError(rule, summary, fmt.Sprintf("anchor-scan search failed: %v", err))
+		return
+	}
+
+	if !found {
+		markRuleChanged(
+			rule,
+			summary,
+			fmt.Sprintf("No non-empty value found %s from anchor at %s.", rule.ParentDirection, match.AnchorCell),
+		)
+		return
+	}
+
+	matched, detail, err := compareAnchorScanValue(match, expectedText, rule.CompareAs)
+	if err != nil {
+		markRuleError(rule, summary, err.Error())
+		return
+	}
+
+	if matched {
+		markRuleMatched(rule, summary, detail)
+		return
+	}
+
+	markRuleChanged(rule, summary, detail)
+}
+
+func compareAnchorScanValue(
+	match sheetsearch.AnchorScanMatch,
+	expected string,
+	compareAs string,
+) (bool, string, error) {
+	switch compareAs {
+	case config.AnchorScanCompareExactText:
+		if match.Value == expected {
+			return true, fmt.Sprintf("Scanned value at %s matched expected text.", match.Cell), nil
+		}
+
+		return false, fmt.Sprintf("Scanned value at %s was %q; expected %q.", match.Cell, match.Value, expected), nil
+	case config.AnchorScanCompareDate:
+		expectedDate, err := parseComparableDate(expected)
+		if err != nil {
+			return false, "", fmt.Errorf("expected date %q is not recognizable: %v", expected, err)
+		}
+
+		actualDate, err := parseComparableDate(match.Value)
+		if err != nil {
+			return false,
+				fmt.Sprintf(
+					"Scanned value at %s was %q, which is not a recognizable date; expected %s.",
+					match.Cell,
+					match.Value,
+					formatComparableDate(expectedDate),
+				),
+				nil
+		}
+
+		if sameDate(actualDate, expectedDate) {
+			return true,
+				fmt.Sprintf(
+					"Scanned value at %s matched expected date %s.",
+					match.Cell,
+					formatComparableDate(expectedDate),
+				),
+				nil
+		}
+
+		return false,
+			fmt.Sprintf(
+				"Scanned value at %s was %s; expected %s.",
+				match.Cell,
+				formatComparableDate(actualDate),
+				formatComparableDate(expectedDate),
+			),
+			nil
+	default:
+		return false, "", fmt.Errorf("unsupported anchor-scan comparison mode %q", compareAs)
+	}
+}
+
+func parseComparableDate(value string) (time.Time, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return time.Time{}, fmt.Errorf("date is empty")
+	}
+
+	for _, layout := range comparableDateLayouts() {
+		date, err := time.ParseInLocation(layout, trimmed, time.UTC)
+		if err != nil {
+			continue
+		}
+
+		return dateOnly(date), nil
+	}
+
+	if date, ok := parseExcelSerialDate(trimmed); ok {
+		return date, nil
+	}
+
+	return time.Time{}, fmt.Errorf("unsupported date format")
+}
+
+func comparableDateLayouts() []string {
+	return []string{
+		"2006-01-02",
+		"2006/01/02",
+		"1/2/2006",
+		"01/02/2006",
+		"1/2/06",
+		"01/02/06",
+		"1-2-2006",
+		"01-02-2006",
+		"1-2-06",
+		"01-02-06",
+		"Jan 2, 2006",
+		"January 2, 2006",
+		"2 Jan 2006",
+		"02 Jan 2006",
+		"2-Jan-2006",
+		"02-Jan-2006",
+		"20060102",
+	}
+}
+
+func parseExcelSerialDate(value string) (time.Time, bool) {
+	serial, err := strconv.ParseFloat(value, 64)
+	if err != nil || serial < 1 || serial > 60000 {
+		return time.Time{}, false
+	}
+
+	days := int(math.Floor(serial))
+	if days == 60 {
+		return time.Time{}, false
+	}
+	if days > 60 {
+		days--
+	}
+
+	base := time.Date(1899, time.December, 31, 0, 0, 0, 0, time.UTC)
+	return base.AddDate(0, 0, days), true
+}
+
+func dateOnly(date time.Time) time.Time {
+	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func sameDate(left time.Time, right time.Time) bool {
+	return left.Year() == right.Year() &&
+		left.Month() == right.Month() &&
+		left.Day() == right.Day()
+}
+
+func formatComparableDate(date time.Time) string {
+	return date.Format("2006-01-02")
 }
 
 func extractOptionsFromRule(

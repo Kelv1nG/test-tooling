@@ -283,6 +283,8 @@ func validateVerificationRule(
 		errs = append(errs, validateHeaderCompareRule(checkID, ruleIndex, rule.HeaderCompare)...)
 	case VerificationRuleTypeExactText:
 		errs = append(errs, validateExactTextRule(checkID, ruleIndex, rule.ExactText)...)
+	case VerificationRuleTypeAnchorScan:
+		errs = append(errs, validateAnchorScanRule(checkID, ruleIndex, rule.AnchorScan)...)
 	}
 
 	if len(errs) > 0 {
@@ -329,6 +331,41 @@ func validateExactTextRule(
 		errs = append(errs, fmt.Errorf("check config %q rule %d requires expected text", checkID, ruleIndex))
 	} else if err := ValidateTemplateText(rule.ExpectedText); err != nil {
 		errs = append(errs, fmt.Errorf("check config %q rule %d has invalid expected-text template: %v", checkID, ruleIndex, err))
+	}
+
+	return errs
+}
+
+func validateAnchorScanRule(
+	checkID string,
+	ruleIndex int,
+	rule AnchorScanMatchConfig,
+) []error {
+	var errs []error
+
+	if strings.TrimSpace(rule.Sheet) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires a sheet", checkID, ruleIndex))
+	}
+	if strings.TrimSpace(rule.Anchor) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires an anchor", checkID, ruleIndex))
+	}
+	if !headersearch.Direction(rule.Direction).Valid() {
+		errs = append(errs, fmt.Errorf("check config %q rule %d direction must be one of up, down, left, right", checkID, ruleIndex))
+	}
+	if strings.TrimSpace(rule.Select) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires a scan result selector", checkID, ruleIndex))
+	} else if rule.Select != AnchorScanSelectLastNonEmptyBeforeBlank {
+		errs = append(errs, fmt.Errorf("check config %q rule %d scan result selector must be %q", checkID, ruleIndex, AnchorScanSelectLastNonEmptyBeforeBlank))
+	}
+	if strings.TrimSpace(rule.ExpectedText) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires expected text", checkID, ruleIndex))
+	} else if err := ValidateTemplateText(rule.ExpectedText); err != nil {
+		errs = append(errs, fmt.Errorf("check config %q rule %d has invalid expected-text template: %v", checkID, ruleIndex, err))
+	}
+	if strings.TrimSpace(rule.CompareAs) == "" {
+		errs = append(errs, fmt.Errorf("check config %q rule %d requires a comparison mode", checkID, ruleIndex))
+	} else if rule.CompareAs != AnchorScanCompareExactText && rule.CompareAs != AnchorScanCompareDate {
+		errs = append(errs, fmt.Errorf("check config %q rule %d comparison mode must be one of %q or %q", checkID, ruleIndex, AnchorScanCompareExactText, AnchorScanCompareDate))
 	}
 
 	return errs
@@ -467,6 +504,8 @@ func marshalRuleConfig(rule VerificationRule) (string, error) {
 		payload = rule.HeaderCompare
 	case VerificationRuleTypeExactText:
 		payload = rule.ExactText
+	case VerificationRuleTypeAnchorScan:
+		payload = rule.AnchorScan
 	default:
 		return "", fmt.Errorf("unsupported rule type %q", rule.Type)
 	}
@@ -527,8 +566,19 @@ func (c ExactMatchCheckConfig) hasValues() bool {
 		strings.TrimSpace(c.ExpectedText) != ""
 }
 
+func (c AnchorScanMatchConfig) hasValues() bool {
+	return strings.TrimSpace(c.Sheet) != "" ||
+		strings.TrimSpace(c.Anchor) != "" ||
+		strings.TrimSpace(c.Direction) != "" ||
+		strings.TrimSpace(c.Select) != "" ||
+		strings.TrimSpace(c.ExpectedText) != "" ||
+		strings.TrimSpace(c.CompareAs) != ""
+}
+
 func (t VerificationRuleType) valid() bool {
-	return t == VerificationRuleTypeHeaderCompare || t == VerificationRuleTypeExactText
+	return t == VerificationRuleTypeHeaderCompare ||
+		t == VerificationRuleTypeExactText ||
+		t == VerificationRuleTypeAnchorScan
 }
 
 func (r VerificationRule) requiresCompareOffset() bool {

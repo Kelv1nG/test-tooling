@@ -170,6 +170,38 @@ templ PageScripts() {
 	    }
 	  };
 
+	  window.nextCheckRuleID = (config, seed) => {
+	    const used = new Set(
+	      Array.from(config.querySelectorAll("input[name='ruleID']"))
+	        .map((input) => input.value.trim())
+	        .filter(Boolean)
+	    );
+
+	    let counter = Math.max(1, seed || 1);
+	    let candidate = "";
+	    do {
+	      candidate = `R${String(counter).padStart(3, "0")}`;
+	      counter += 1;
+	    } while (used.has(candidate));
+
+	    return candidate;
+	  };
+
+	  window.refreshCheckRuleIDs = (config) => {
+	    const rules = Array.from(config?.querySelectorAll("[data-check-rules] > [data-check-rule]") || []);
+	    rules.forEach((rule, index) => {
+	      const idInput = rule.querySelector("input[name='ruleID']");
+	      const idDisplay = rule.querySelector("[data-rule-id-display]");
+	      if (idInput && !idInput.value.trim()) {
+	        idInput.value = window.nextCheckRuleID(config, index + 1);
+	      }
+	      if (idInput && idDisplay) {
+	        idDisplay.textContent = idInput.value || "Generated on add";
+	        idDisplay.title = idInput.value;
+	      }
+	    });
+	  };
+
 	  window.nextCheckConfigID = (editor, seed) => {
 	    const used = new Set(
 	      Array.from(editor.querySelectorAll("input[name='checkID']"))
@@ -204,6 +236,7 @@ templ PageScripts() {
 	      config.querySelectorAll("input[name='ruleParentIndex']").forEach((input) => {
 	        input.value = String(rowNumber);
 	      });
+	      window.refreshCheckRuleIDs(config);
 	      window.updateCheckRuleCount(config);
 	    });
 	  };
@@ -255,9 +288,10 @@ templ PageScripts() {
 	    if (parentInput && parentIndex > 0) {
 	      parentInput.value = String(parentIndex);
 	    }
+	    window.refreshCheckRuleIDs(config);
 	    window.updateCheckRuleCount(config);
 
-	    const firstInput = newRule?.querySelector("input[name='ruleID']");
+	    const firstInput = newRule?.querySelector("input[name='ruleName']");
 	    if (firstInput) {
 	      firstInput.focus();
 	    }
