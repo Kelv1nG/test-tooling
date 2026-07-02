@@ -255,14 +255,11 @@ func findParentLayerOffsets(
 	options ExtractOptions,
 	leafSpan []CellPosition,
 ) ([]int, error) {
-	maxParentLayers := options.MaxHeaderDepth - 1
-	if maxParentLayers < 1 {
-		return nil, nil
-	}
+	maxParentLayers := options.MaxHeaderDepth
 
 	offsets := make([]int, 0, maxParentLayers)
 
-	// Header depth counts non-empty path levels. Fully blank spacer layers are
+	// Header depth counts non-empty parent layers. Fully blank spacer layers are
 	// skipped so a visual gap between headers and values does not hide headers.
 	for distance := 1; len(offsets) < maxParentLayers; distance++ {
 		anyInBounds := false

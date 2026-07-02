@@ -940,7 +940,7 @@ func CheckRuleEditor(parent CheckRowView, rule CheckRuleView) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = RuleFieldLabel("Depth", "Maximum number of non-empty header levels to include; blank spacer rows or columns are ignored.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = RuleFieldLabel("Depth", "Maximum number of non-empty parent header levels to include; blank spacer rows or columns are ignored.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

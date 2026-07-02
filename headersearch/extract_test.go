@@ -206,7 +206,7 @@ func TestExtractHeadersHierarchiesAndMerges(t *testing.T) {
 				Sheet:           "Report",
 				Anchor:          "Fund Inception Date",
 				ParentDirection: DirectionUp,
-				MaxHeaderDepth:  3,
+				MaxHeaderDepth:  1,
 			},
 			wantAnchorAxis: "B2",
 			wantPaths: [][]string{
@@ -229,7 +229,7 @@ func TestExtractHeadersHierarchiesAndMerges(t *testing.T) {
 				Sheet:           "Report",
 				Anchor:          "Anchor",
 				ParentDirection: DirectionUp,
-				MaxHeaderDepth:  2,
+				MaxHeaderDepth:  1,
 			},
 			wantAnchorAxis: "A3",
 			wantPaths: [][]string{
@@ -255,7 +255,7 @@ func TestExtractHeadersHierarchiesAndMerges(t *testing.T) {
 				Sheet:           "Report",
 				Anchor:          "Anchor",
 				ParentDirection: DirectionUp,
-				MaxHeaderDepth:  3,
+				MaxHeaderDepth:  2,
 			},
 			wantAnchorAxis: "A4",
 			wantPaths: [][]string{
@@ -362,7 +362,7 @@ func TestExtractHeadersStopsAtBlankParentLayerAndMaxDepth(t *testing.T) {
 		Sheet:           "Report",
 		Anchor:          "Fund Inception Date",
 		ParentDirection: DirectionUp,
-		MaxHeaderDepth:  2,
+		MaxHeaderDepth:  1,
 	})
 	if err != nil {
 		t.Fatalf("ExtractHeaders returned error: %v", err)
