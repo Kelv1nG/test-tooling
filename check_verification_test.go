@@ -286,6 +286,60 @@ func TestRunCheckVerificationReportsRemovedHeader(t *testing.T) {
 	}
 }
 
+func TestRunCheckVerificationIgnoresOrderWhenHeaderInsertedBeforeExistingHeader(t *testing.T) {
+	tempDir := t.TempDir()
+	comparePath := filepath.Join(tempDir, "report_2026_04_30.xlsx")
+	currentPath := filepath.Join(tempDir, "report_2026_05_31.xlsx")
+
+	writeReturnHeaderWorkbook(t, comparePath, true)
+	writeReturnHeaderWorkbook(t, currentPath, false)
+
+	rows, summary := runCheckVerification([]templates.CheckRowView{
+		{
+			Index:               1,
+			ID:                  "CHK-001",
+			File:                filepath.Join(tempDir, "report_{yyyy}_{mm}_{dd}.xlsx"),
+			CompareOffsetMonths: -1,
+			Rules: []templates.CheckRuleView{
+				{
+					Index:           1,
+					ID:              "R001",
+					CheckID:         "CHK-001",
+					Name:            "Return headers",
+					Type:            "header_compare",
+					Enabled:         true,
+					Sheet:           "Report",
+					Anchor:          "Anchor",
+					ParentDirection: "up",
+					MaxHeaderDepth:  "1",
+					RequireOrder:    false,
+				},
+			},
+		},
+	}, time.Date(2026, time.May, 31, 0, 0, 0, 0, time.UTC))
+
+	if summary.Changed != 1 {
+		t.Fatalf("summary.Changed = %d, want 1", summary.Changed)
+	}
+	if summary.Errors != 0 {
+		t.Fatalf("summary.Errors = %d, want 0", summary.Errors)
+	}
+
+	detail := rows[0].Rules[0].Detail
+	if !strings.Contains(detail, "-- Net Return 3") {
+		t.Fatalf("expected missing inserted header, got %q", detail)
+	}
+	for _, unexpected := range []string{
+		"-- Net Return 2",
+		"++ Net Return 2",
+		"column order changed",
+	} {
+		if strings.Contains(detail, unexpected) {
+			t.Fatalf("detail should not contain %q: %q", unexpected, detail)
+		}
+	}
+}
+
 func writeExactTextWorkbook(t *testing.T, path string, value string) {
 	t.Helper()
 
@@ -296,6 +350,46 @@ func writeExactTextWorkbook(t *testing.T, path string, value string) {
 	}
 	if err := workbook.SetCellStr("Report", "B3", value); err != nil {
 		t.Fatalf("SetCellStr returned error: %v", err)
+	}
+	if err := workbook.SaveAs(path); err != nil {
+		t.Fatalf("SaveAs returned error: %v", err)
+	}
+	if err := workbook.Close(); err != nil {
+		t.Fatalf("Close returned error: %v", err)
+	}
+}
+
+func writeReturnHeaderWorkbook(t *testing.T, path string, includeExtraReturn bool) {
+	t.Helper()
+
+	workbook := excelize.NewFile()
+	defaultSheet := workbook.GetSheetName(workbook.GetActiveSheetIndex())
+	if err := workbook.SetSheetName(defaultSheet, "Report"); err != nil {
+		t.Fatalf("SetSheetName returned error: %v", err)
+	}
+
+	values := map[string]string{
+		"A1": "Gross Return",
+		"B1": "Net Return 1",
+		"C1": "Net Return 2",
+		"A3": "Anchor",
+		"B3": "Value 1",
+		"C3": "Value 2",
+	}
+	if includeExtraReturn {
+		values["D1"] = "Net Return 3"
+		values["E1"] = "Some Header"
+		values["D3"] = "Value 3"
+		values["E3"] = "Some Value"
+	} else {
+		values["D1"] = "Some Header"
+		values["D3"] = "Some Value"
+	}
+
+	for cell, value := range values {
+		if err := workbook.SetCellStr("Report", cell, value); err != nil {
+			t.Fatalf("SetCellStr %s returned error: %v", cell, err)
+		}
 	}
 	if err := workbook.SaveAs(path); err != nil {
 		t.Fatalf("SaveAs returned error: %v", err)

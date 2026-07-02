@@ -16,6 +16,10 @@ type ExtractOptions struct {
 	Anchor          string
 	ParentDirection Direction
 	MaxHeaderDepth  int
+	// IgnoreAnchorLayer excludes the row or column containing the anchor from
+	// header paths. This is useful when the anchor layer contains data values
+	// under the headers rather than leaf header labels.
+	IgnoreAnchorLayer bool
 }
 
 type CellPosition struct {

@@ -409,10 +409,11 @@ func extractOptionsFromRule(
 	}
 
 	return headersearch.ExtractOptions{
-		Sheet:           strings.TrimSpace(rule.Sheet),
-		Anchor:          strings.TrimSpace(rule.Anchor),
-		ParentDirection: direction,
-		MaxHeaderDepth:  depth,
+		Sheet:             strings.TrimSpace(rule.Sheet),
+		Anchor:            strings.TrimSpace(rule.Anchor),
+		ParentDirection:   direction,
+		MaxHeaderDepth:    depth,
+		IgnoreAnchorLayer: true,
 	}, nil
 }
 
@@ -580,5 +581,5 @@ func formatChangedColumn(path []string) string {
 		return path[0]
 	}
 
-	return strings.Join(path[:len(path)-1], " > ")
+	return strings.Join(path, " > ")
 }

@@ -327,15 +327,20 @@ func buildHeaderPaths(
 			path = append(path, value)
 		}
 
-		value, err := ctx.resolvedCellValue(leaf)
-		if err != nil {
-			return nil, err
-		}
-		if value != "" && (len(path) == 0 || path[len(path)-1] != value) {
-			path = append(path, value)
+		if !options.IgnoreAnchorLayer {
+			value, err := ctx.resolvedCellValue(leaf)
+			if err != nil {
+				return nil, err
+			}
+			if value != "" && (len(path) == 0 || path[len(path)-1] != value) {
+				path = append(path, value)
+			}
 		}
 
 		if len(path) == 0 {
+			if options.IgnoreAnchorLayer {
+				continue
+			}
 			return nil, fmt.Errorf(
 				"%w: sheet=%q anchor=%q leaf=%s",
 				ErrInvalidHeaderSpan,

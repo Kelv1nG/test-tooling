@@ -373,6 +373,42 @@ func TestExtractHeadersStopsAtBlankParentLayerAndMaxDepth(t *testing.T) {
 	}
 }
 
+func TestExtractHeadersCanIgnoreAnchorLayer(t *testing.T) {
+	workbook := newWorkbook(t, "Report", map[string]string{
+		"A1": "Gross Return",
+		"B1": "Net Return 1",
+		"C1": "Net Return 2",
+		"A3": "Anchor",
+		"B3": "Value 1",
+		"C3": "Value 2",
+	}, nil)
+
+	table, err := ExtractHeaders(workbook, ExtractOptions{
+		Sheet:             "Report",
+		Anchor:            "Anchor",
+		ParentDirection:   DirectionUp,
+		MaxHeaderDepth:    1,
+		IgnoreAnchorLayer: true,
+	})
+	if err != nil {
+		t.Fatalf("ExtractHeaders returned error: %v", err)
+	}
+
+	wantPaths := [][]string{
+		{"Gross Return"},
+		{"Net Return 1"},
+		{"Net Return 2"},
+	}
+	if len(table.Headers) != len(wantPaths) {
+		t.Fatalf("expected %d headers, got %d", len(wantPaths), len(table.Headers))
+	}
+	for index, wantPath := range wantPaths {
+		if !pathEqual(table.Headers[index].Path, wantPath) {
+			t.Fatalf("header %d path = %v, want %v", index, table.Headers[index].Path, wantPath)
+		}
+	}
+}
+
 func newWorkbook(
 	t *testing.T,
 	sheet string,
