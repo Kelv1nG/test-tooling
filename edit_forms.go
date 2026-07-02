@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"tooling/config"
-	"tooling/headersearch"
+	"tooling/sheetsearch"
 	"tooling/templates"
 )
 
@@ -499,7 +499,7 @@ func validateHeaderCheckForm(
 	}
 	if parentDirection == "" {
 		errs = append(errs, fmt.Errorf("check row %d requires a verification direction", rowIndex))
-	} else if !headersearch.Direction(parentDirection).Valid() {
+	} else if !sheetsearch.Direction(parentDirection).Valid() {
 		errs = append(errs, fmt.Errorf("check row %d has an invalid verification direction", rowIndex))
 	}
 	if maxHeaderDepth == "" {
@@ -562,7 +562,7 @@ func validateAnchorScanForm(
 	}
 	if direction == "" {
 		errs = append(errs, fmt.Errorf("check row %d requires an anchor-scan direction", rowIndex))
-	} else if !headersearch.Direction(direction).Valid() {
+	} else if !sheetsearch.Direction(direction).Valid() {
 		errs = append(errs, fmt.Errorf("check row %d has an invalid anchor-scan direction", rowIndex))
 	}
 	if scanSelect == "" {

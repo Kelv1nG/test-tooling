@@ -1,13 +1,15 @@
 package headersearch
 
-type Direction string
+import "tooling/sheetsearch"
 
 const (
-	DirectionUp    Direction = "up"
-	DirectionDown  Direction = "down"
-	DirectionLeft  Direction = "left"
-	DirectionRight Direction = "right"
+	DirectionUp    = sheetsearch.DirectionUp
+	DirectionDown  = sheetsearch.DirectionDown
+	DirectionLeft  = sheetsearch.DirectionLeft
+	DirectionRight = sheetsearch.DirectionRight
 )
+
+type Direction = sheetsearch.Direction
 
 type ExtractOptions struct {
 	Sheet           string

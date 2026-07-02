@@ -91,7 +91,7 @@ func TestFindAnchorScanValueLastNonEmptyBeforeBlank(t *testing.T) {
 	match, found, err := FindAnchorScanValue(workbook, AnchorScanOptions{
 		Sheet:     "Report",
 		Anchor:    "Reporting dates",
-		Direction: "down",
+		Direction: DirectionDown,
 		Select:    "last_non_empty_before_blank",
 	})
 	if err != nil {

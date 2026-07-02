@@ -17,7 +17,7 @@ const lastNonEmptyBeforeBlankSelector = "last_non_empty_before_blank"
 type AnchorScanOptions struct {
 	Sheet     string
 	Anchor    string
-	Direction string
+	Direction Direction
 	Select    string
 }
 
@@ -28,6 +28,9 @@ type AnchorScanMatch struct {
 	Value      string
 }
 
+// FindAnchorScanValue finds a unique anchor, scans away from it, and returns
+// the selected cell/value. The current selector stops at the first blank and
+// returns the last non-empty cell before that blank.
 func FindAnchorScanValue(
 	workbook *excelize.File,
 	options AnchorScanOptions,
@@ -38,7 +41,7 @@ func FindAnchorScanValue(
 	if options.Anchor == "" {
 		return AnchorScanMatch{}, false, fmt.Errorf("anchor is required")
 	}
-	if !validScanDirection(options.Direction) {
+	if !options.Direction.Valid() {
 		return AnchorScanMatch{}, false, fmt.Errorf("direction must be one of up, down, left, right")
 	}
 	if options.Select != lastNonEmptyBeforeBlankSelector {
@@ -125,12 +128,14 @@ func findUniqueAnchor(
 func scanLastNonEmptyBeforeBlank(
 	rows [][]string,
 	anchor scanCell,
-	direction string,
+	direction Direction,
 ) (scanCell, bool) {
 	current := anchor
 	var selected scanCell
 	found := false
 
+	// The scan starts one cell away from the anchor and stops at the first
+	// blank/sheet edge, so unrelated sections after a blank are ignored.
 	for {
 		next, ok := moveScanCell(current, direction)
 		if !ok {
@@ -153,25 +158,15 @@ func scanLastNonEmptyBeforeBlank(
 
 func moveScanCell(
 	cell scanCell,
-	direction string,
+	direction Direction,
 ) (scanCell, bool) {
-	switch direction {
-	case "up":
-		cell.row--
-	case "down":
-		cell.row++
-	case "left":
-		cell.column--
-	case "right":
-		cell.column++
-	default:
+	row, column, ok := direction.Move(cell.row, cell.column, 1)
+	if !ok {
 		return scanCell{}, false
 	}
 
-	if cell.row < 1 || cell.column < 1 {
-		return scanCell{}, false
-	}
-
+	cell.row = row
+	cell.column = column
 	return cell, true
 }
 
@@ -191,13 +186,4 @@ func scanCellValue(
 	}
 
 	return rows[row-1][column-1]
-}
-
-func validScanDirection(direction string) bool {
-	switch direction {
-	case "up", "down", "left", "right":
-		return true
-	default:
-		return false
-	}
 }

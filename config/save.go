@@ -8,8 +8,6 @@ import (
 	"strings"
 
 	"github.com/xuri/excelize/v2"
-
-	"tooling/headersearch"
 )
 
 func (l *Loader) SaveTransferWorkbook(
@@ -307,7 +305,7 @@ func validateHeaderCompareRule(
 	if strings.TrimSpace(rule.Anchor) == "" {
 		errs = append(errs, fmt.Errorf("check config %q rule %d requires an anchor", checkID, ruleIndex))
 	}
-	if !headersearch.Direction(rule.ParentDirection).Valid() {
+	if !rule.ParentDirection.Valid() {
 		errs = append(errs, fmt.Errorf("check config %q rule %d direction must be one of up, down, left, right", checkID, ruleIndex))
 	}
 	if rule.MaxHeaderDepth < 1 {
@@ -349,7 +347,7 @@ func validateAnchorScanRule(
 	if strings.TrimSpace(rule.Anchor) == "" {
 		errs = append(errs, fmt.Errorf("check config %q rule %d requires an anchor", checkID, ruleIndex))
 	}
-	if !headersearch.Direction(rule.Direction).Valid() {
+	if !rule.Direction.Valid() {
 		errs = append(errs, fmt.Errorf("check config %q rule %d direction must be one of up, down, left, right", checkID, ruleIndex))
 	}
 	if strings.TrimSpace(rule.Select) == "" {
@@ -556,7 +554,7 @@ func clearDataRows(
 func (c HeaderCheckConfig) hasValues() bool {
 	return strings.TrimSpace(c.Sheet) != "" ||
 		strings.TrimSpace(c.Anchor) != "" ||
-		strings.TrimSpace(c.ParentDirection) != "" ||
+		strings.TrimSpace(string(c.ParentDirection)) != "" ||
 		c.MaxHeaderDepth > 0 ||
 		c.RequireOrder
 }
@@ -569,7 +567,7 @@ func (c ExactMatchCheckConfig) hasValues() bool {
 func (c AnchorScanMatchConfig) hasValues() bool {
 	return strings.TrimSpace(c.Sheet) != "" ||
 		strings.TrimSpace(c.Anchor) != "" ||
-		strings.TrimSpace(c.Direction) != "" ||
+		strings.TrimSpace(string(c.Direction)) != "" ||
 		strings.TrimSpace(c.Select) != "" ||
 		strings.TrimSpace(c.ExpectedText) != "" ||
 		strings.TrimSpace(c.CompareAs) != ""

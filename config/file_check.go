@@ -9,7 +9,7 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"tooling/headersearch"
+	"tooling/sheetsearch"
 )
 
 func (d FileCheckTableDefinition) read(
@@ -308,7 +308,7 @@ func parseHeaderCompareRule(
 
 	headerCheck.Sheet = strings.TrimSpace(headerCheck.Sheet)
 	headerCheck.Anchor = strings.TrimSpace(headerCheck.Anchor)
-	headerCheck.ParentDirection = strings.TrimSpace(headerCheck.ParentDirection)
+	headerCheck.ParentDirection = sheetsearch.Direction(strings.TrimSpace(string(headerCheck.ParentDirection)))
 
 	if headerCheck.Sheet == "" {
 		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeHeaderCompare, "sheet"))
@@ -318,7 +318,7 @@ func parseHeaderCompareRule(
 	}
 	if headerCheck.ParentDirection == "" {
 		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeHeaderCompare, "parent_direction"))
-	} else if !headersearch.Direction(headerCheck.ParentDirection).Valid() {
+	} else if !headerCheck.ParentDirection.Valid() {
 		errs = append(errs, fmt.Errorf("sheet %q, row %d: field %q in column %q must be one of up, down, left, right", definition.Sheet, excelRow, "parent_direction", definition.ConfigCol))
 	}
 	if headerCheck.MaxHeaderDepth < 1 {
@@ -370,7 +370,7 @@ func parseAnchorScanRule(
 
 	anchorScan.Sheet = strings.TrimSpace(anchorScan.Sheet)
 	anchorScan.Anchor = strings.TrimSpace(anchorScan.Anchor)
-	anchorScan.Direction = strings.TrimSpace(anchorScan.Direction)
+	anchorScan.Direction = sheetsearch.Direction(strings.TrimSpace(string(anchorScan.Direction)))
 	anchorScan.Select = strings.TrimSpace(anchorScan.Select)
 	anchorScan.CompareAs = strings.TrimSpace(anchorScan.CompareAs)
 
@@ -382,7 +382,7 @@ func parseAnchorScanRule(
 	}
 	if anchorScan.Direction == "" {
 		errs = append(errs, missingRuleConfigFieldError(definition, excelRow, VerificationRuleTypeAnchorScan, "direction"))
-	} else if !headersearch.Direction(anchorScan.Direction).Valid() {
+	} else if !anchorScan.Direction.Valid() {
 		errs = append(errs, fmt.Errorf("sheet %q, row %d: field %q in column %q must be one of up, down, left, right", definition.Sheet, excelRow, "direction", definition.ConfigCol))
 	}
 	if anchorScan.Select == "" {

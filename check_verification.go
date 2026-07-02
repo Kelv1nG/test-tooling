@@ -227,7 +227,7 @@ func runAnchorScanRule(
 		sheetsearch.AnchorScanOptions{
 			Sheet:     rule.Sheet,
 			Anchor:    rule.Anchor,
-			Direction: rule.ParentDirection,
+			Direction: sheetsearch.Direction(strings.TrimSpace(rule.ParentDirection)),
 			Select:    rule.ScanSelect,
 		},
 	)
@@ -279,6 +279,8 @@ func compareAnchorScanValue(
 
 		actualDate, err := parseComparableDate(match.Value)
 		if err != nil {
+			// A bad value in the workbook means the rule changed; only an
+			// unparseable configured expectation is a rule error.
 			return false,
 				fmt.Sprintf(
 					"Scanned value at %s was %q, which is not a recognizable date; expected %s.",
@@ -312,6 +314,8 @@ func compareAnchorScanValue(
 	}
 }
 
+// parseComparableDate accepts the common text formats produced by templates,
+// user-entered report dates, and raw Excel serial dates.
 func parseComparableDate(value string) (time.Time, error) {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
@@ -362,6 +366,9 @@ func parseExcelSerialDate(value string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 
+	// Excel's 1900 date system treats 1900 as a leap year for Lotus 1-2-3
+	// compatibility. Serial 60 is the fake 1900-02-29, and later dates need
+	// to be shifted back by one day.
 	days := int(math.Floor(serial))
 	if days == 60 {
 		return time.Time{}, false

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"tooling/config"
+	"tooling/sheetsearch"
 	"tooling/templates"
 )
 
@@ -110,7 +111,7 @@ func buildCheckRuleRows(
 		case config.VerificationRuleTypeHeaderCompare:
 			row.Sheet = rule.HeaderCompare.Sheet
 			row.Anchor = rule.HeaderCompare.Anchor
-			row.ParentDirection = rule.HeaderCompare.ParentDirection
+			row.ParentDirection = string(rule.HeaderCompare.ParentDirection)
 			row.MaxHeaderDepth = formatHeaderMaxDepth(rule.HeaderCompare.MaxHeaderDepth)
 			row.RequireOrder = rule.HeaderCompare.RequireOrder
 		case config.VerificationRuleTypeExactText:
@@ -119,7 +120,7 @@ func buildCheckRuleRows(
 		case config.VerificationRuleTypeAnchorScan:
 			row.Sheet = rule.AnchorScan.Sheet
 			row.Anchor = rule.AnchorScan.Anchor
-			row.ParentDirection = rule.AnchorScan.Direction
+			row.ParentDirection = string(rule.AnchorScan.Direction)
 			row.ScanSelect = rule.AnchorScan.Select
 			row.ExpectedText = rule.AnchorScan.ExpectedText
 			row.CompareAs = rule.AnchorScan.CompareAs
@@ -190,7 +191,7 @@ func buildVerificationRules(
 			rule.HeaderCompare = config.HeaderCheckConfig{
 				Sheet:           row.Sheet,
 				Anchor:          row.Anchor,
-				ParentDirection: row.ParentDirection,
+				ParentDirection: sheetsearch.Direction(row.ParentDirection),
 				MaxHeaderDepth:  parseHeaderMaxDepth(row.MaxHeaderDepth),
 				RequireOrder:    row.RequireOrder,
 			}
@@ -203,7 +204,7 @@ func buildVerificationRules(
 			rule.AnchorScan = config.AnchorScanMatchConfig{
 				Sheet:        row.Sheet,
 				Anchor:       row.Anchor,
-				Direction:    row.ParentDirection,
+				Direction:    sheetsearch.Direction(row.ParentDirection),
 				Select:       row.ScanSelect,
 				ExpectedText: row.ExpectedText,
 				CompareAs:    row.CompareAs,

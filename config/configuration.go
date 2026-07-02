@@ -1,5 +1,7 @@
 package config
 
+import "tooling/sheetsearch"
+
 type Configuration struct {
 	FileTransferMaps []FileTransferMap
 	FileCheckConfigs []FileCheckConfig
@@ -40,11 +42,11 @@ type VerificationRule struct {
 }
 
 type HeaderCheckConfig struct {
-	Sheet           string `json:"sheet"`
-	Anchor          string `json:"anchor"`
-	ParentDirection string `json:"parent_direction"`
-	MaxHeaderDepth  int    `json:"max_header_depth"`
-	RequireOrder    bool   `json:"require_order"`
+	Sheet           string                `json:"sheet"`
+	Anchor          string                `json:"anchor"`
+	ParentDirection sheetsearch.Direction `json:"parent_direction"`
+	MaxHeaderDepth  int                   `json:"max_header_depth"`
+	RequireOrder    bool                  `json:"require_order"`
 }
 
 type ExactMatchCheckConfig struct {
@@ -53,12 +55,12 @@ type ExactMatchCheckConfig struct {
 }
 
 type AnchorScanMatchConfig struct {
-	Sheet        string `json:"sheet"`
-	Anchor       string `json:"anchor"`
-	Direction    string `json:"direction"`
-	Select       string `json:"select"`
-	ExpectedText string `json:"expected_text"`
-	CompareAs    string `json:"compare_as"`
+	Sheet        string                `json:"sheet"`
+	Anchor       string                `json:"anchor"`
+	Direction    sheetsearch.Direction `json:"direction"`
+	Select       string                `json:"select"`
+	ExpectedText string                `json:"expected_text"`
+	CompareAs    string                `json:"compare_as"`
 }
 
 const (
