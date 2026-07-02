@@ -216,6 +216,55 @@ func TestExtractHeadersHierarchiesAndMerges(t *testing.T) {
 			},
 		},
 		{
+			name: "skips blank spacer row before header",
+			cells: map[string]string{
+				"A1": "Header A",
+				"B1": "Header B",
+				"C1": "Header C",
+				"A3": "Anchor",
+				"B3": "Value B",
+				"C3": "Value C",
+			},
+			options: ExtractOptions{
+				Sheet:           "Report",
+				Anchor:          "Anchor",
+				ParentDirection: DirectionUp,
+				MaxHeaderDepth:  2,
+			},
+			wantAnchorAxis: "A3",
+			wantPaths: [][]string{
+				{"Header A", "Anchor"},
+				{"Header B", "Value B"},
+				{"Header C", "Value C"},
+			},
+		},
+		{
+			name: "skips blank spacer row before multiple header levels",
+			cells: map[string]string{
+				"A1": "Group 1",
+				"C1": "Group 2",
+				"A2": "Header A",
+				"B2": "Header B",
+				"C2": "Header C",
+				"A4": "Anchor",
+				"B4": "Value B",
+				"C4": "Value C",
+			},
+			merges: [][2]string{{"A1", "B1"}},
+			options: ExtractOptions{
+				Sheet:           "Report",
+				Anchor:          "Anchor",
+				ParentDirection: DirectionUp,
+				MaxHeaderDepth:  3,
+			},
+			wantAnchorAxis: "A4",
+			wantPaths: [][]string{
+				{"Group 1", "Header A", "Anchor"},
+				{"Group 1", "Header B", "Value B"},
+				{"Group 2", "Header C", "Value C"},
+			},
+		},
+		{
 			name: "stops at blank boundary",
 			cells: map[string]string{
 				"A2": "Fund Name",

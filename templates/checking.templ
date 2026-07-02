@@ -306,7 +306,7 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 				</select>
 			</label>
 			<label x-show="ruleType === 'header_compare'" class="w-full sm:w-28">
-				@RuleFieldLabel("Depth", "Maximum number of header levels to include from the anchor direction.")
+				@RuleFieldLabel("Depth", "Maximum number of non-empty header levels to include; blank spacer rows or columns are ignored.")
 				<input name="ruleMaxHeaderDepth" value={ rule.MaxHeaderDepth } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 			</label>
 			<label x-show="ruleType === 'header_compare'" class="w-full sm:w-32">

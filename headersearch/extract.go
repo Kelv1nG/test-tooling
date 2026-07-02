@@ -40,12 +40,12 @@ func ExtractHeaders(
 		return HeaderTable{}, err
 	}
 
-	layerCount, err := determineHeaderLayers(ctx, options, leafSpan)
+	parentLayerOffsets, err := findParentLayerOffsets(ctx, options, leafSpan)
 	if err != nil {
 		return HeaderTable{}, err
 	}
 
-	headers, err := buildHeaderPaths(ctx, options, leafSpan, layerCount)
+	headers, err := buildHeaderPaths(ctx, options, leafSpan, parentLayerOffsets)
 	if err != nil {
 		return HeaderTable{}, err
 	}
@@ -250,62 +250,68 @@ func findLeafSpan(
 	return span, nil
 }
 
-func determineHeaderLayers(
+func findParentLayerOffsets(
 	ctx sheetContext,
 	options ExtractOptions,
 	leafSpan []CellPosition,
-) (int, error) {
-	layerCount := 1
+) ([]int, error) {
+	maxParentLayers := options.MaxHeaderDepth - 1
+	if maxParentLayers < 1 {
+		return nil, nil
+	}
 
-	for distance := 1; distance < options.MaxHeaderDepth; distance++ {
-		allEmpty := true
+	offsets := make([]int, 0, maxParentLayers)
+
+	// Header depth counts non-empty path levels. Fully blank spacer layers are
+	// skipped so a visual gap between headers and values does not hide headers.
+	for distance := 1; len(offsets) < maxParentLayers; distance++ {
+		anyInBounds := false
+		anyValue := false
 
 		for _, leaf := range leafSpan {
 			position, ok := move(leaf, options.ParentDirection, distance)
 			if !ok || !ctx.inBounds(position) {
 				continue
 			}
+			anyInBounds = true
 
 			value, err := ctx.resolvedCellValue(position)
 			if err != nil {
-				return 0, err
+				return nil, err
 			}
 
 			if value != "" {
-				allEmpty = false
-				break
+				anyValue = true
 			}
 		}
 
-		if allEmpty {
+		if !anyInBounds {
 			break
 		}
 
-		layerCount++
+		if anyValue {
+			offsets = append(offsets, distance)
+		}
 	}
 
-	return layerCount, nil
+	return offsets, nil
 }
 
 func buildHeaderPaths(
 	ctx sheetContext,
 	options ExtractOptions,
 	leafSpan []CellPosition,
-	layerCount int,
+	parentLayerOffsets []int,
 ) ([]ColumnHeader, error) {
 	headers := make([]ColumnHeader, 0, len(leafSpan))
 
 	for _, leaf := range leafSpan {
-		path := make([]string, 0, layerCount)
+		path := make([]string, 0, len(parentLayerOffsets)+1)
 
-		for distance := layerCount - 1; distance >= 0; distance-- {
-			position := leaf
-			var ok bool
-			if distance > 0 {
-				position, ok = move(leaf, options.ParentDirection, distance)
-				if !ok || !ctx.inBounds(position) {
-					continue
-				}
+		for index := len(parentLayerOffsets) - 1; index >= 0; index-- {
+			position, ok := move(leaf, options.ParentDirection, parentLayerOffsets[index])
+			if !ok || !ctx.inBounds(position) {
+				continue
 			}
 
 			value, err := ctx.resolvedCellValue(position)
@@ -321,6 +327,14 @@ func buildHeaderPaths(
 				continue
 			}
 
+			path = append(path, value)
+		}
+
+		value, err := ctx.resolvedCellValue(leaf)
+		if err != nil {
+			return nil, err
+		}
+		if value != "" && (len(path) == 0 || path[len(path)-1] != value) {
 			path = append(path, value)
 		}
 
