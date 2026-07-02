@@ -56,7 +56,7 @@ templ CheckingTab(data PageData) {
 							<span>Placeholder list</span>
 							<span class="ml-2 text-xs font-normal text-slate-500">Example values for the validator date</span>
 						</summary>
-						<p class="mt-3 text-sm text-slate-600">These tokens work in validator file paths and expected rule text.</p>
+						<p class="mt-3 text-sm text-slate-600">These tokens work in validator file paths and expected rule text. File paths may also use * or ? wildcards, and each wildcard pattern must match exactly one file.</p>
 						<div class="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2">
 							<div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs"><span class="text-slate-700">&#123;yyyy&#125;</span><span x-text="window.transferTemplateTokenValue('yyyy', referenceDate)" class="text-slate-500"></span></div>
 							<div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 font-mono text-xs"><span class="text-slate-700">&#123;yy&#125;</span><span x-text="window.transferTemplateTokenValue('yy', referenceDate)" class="text-slate-500"></span></div>
@@ -256,7 +256,7 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 		<div class="mt-4 grid gap-3 lg:grid-cols-5">
 			<div>
 				<input type="hidden" name="ruleID" value={ rule.ID }/>
-				<div class="text-xs font-semibold uppercase text-slate-500">Rule ID</div>
+				@RuleFieldLabel("Rule ID", "Generated identifier saved with this verification rule.")
 				<div title={ rule.ID } data-rule-id-display class="mt-1 flex min-h-[2.875rem] items-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 font-mono text-sm font-semibold text-slate-700">
 					if rule.ID != "" {
 						{ rule.ID }
@@ -266,37 +266,37 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 				</div>
 			</div>
 			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Name</div>
+				@RuleFieldLabel("Name", "Friendly display name shown in verification results.")
 				<input name="ruleName" value={ rule.Name } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 			</label>
 			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Type</div>
+				@RuleFieldLabel("Type", "Chooses the verification behavior and which parameters this rule uses.")
 				<select x-model="ruleType" name="ruleType" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
-					<option value="header_compare" selected?={ rule.Type == "header_compare" }>Header compare</option>
-					<option value="exact_text" selected?={ rule.Type == "exact_text" || rule.Type == "" }>Exact text</option>
-					<option value="anchor_scan_match" selected?={ rule.Type == "anchor_scan_match" }>Anchor scan match</option>
+					<option value="header_compare" title="Compare headers around an anchor against the configured comparison file." selected?={ rule.Type == "header_compare" }>Header compare</option>
+					<option value="exact_text" title="Search the current file for one exact expected text value." selected?={ rule.Type == "exact_text" || rule.Type == "" }>Exact text</option>
+					<option value="anchor_scan_match" title="Find an anchor, scan from it, and compare the selected value." selected?={ rule.Type == "anchor_scan_match" }>Anchor scan match</option>
 				</select>
 			</label>
 			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Enabled</div>
+				@RuleFieldLabel("Enabled", "Disabled rules are saved but skipped when verification runs.")
 				<select name="ruleEnabled" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
 					<option value="true" selected?={ rule.Enabled }>Yes</option>
 					<option value="false" selected?={ !rule.Enabled }>No</option>
 				</select>
 			</label>
 			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Sheet / Index</div>
+				@RuleFieldLabel("Sheet / Index", "Worksheet name or 1-based sheet number to inspect.")
 				<input name="ruleSheet" value={ rule.Sheet } placeholder="Report or 2" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 			</label>
 		</div>
 
-		<div x-show="ruleType === 'header_compare' || ruleType === 'anchor_scan_match'" class="mt-3 grid gap-3 lg:grid-cols-4">
-			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Anchor</div>
+		<div x-show="ruleType === 'header_compare' || ruleType === 'anchor_scan_match'" class="mt-3 flex flex-wrap items-start gap-3">
+			<label class="min-w-[14rem] flex-[1_1_18rem]">
+				@RuleFieldLabel("Anchor", "Exact cell text used as the starting point for this rule.")
 				<input name="ruleAnchor" value={ rule.Anchor } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 			</label>
-			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500">Direction</div>
+			<label class="w-full sm:w-36">
+				@RuleFieldLabel("Direction", "Direction to look from the anchor.")
 				<select name="ruleParentDirection" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
 					<option value="" selected?={ rule.ParentDirection == "" }>Select</option>
 					<option value="up" selected?={ rule.ParentDirection == "up" }>Up</option>
@@ -305,25 +305,25 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 					<option value="right" selected?={ rule.ParentDirection == "right" }>Right</option>
 				</select>
 			</label>
-			<label x-show="ruleType === 'header_compare'">
-				<div class="text-xs font-semibold uppercase text-slate-500">Depth</div>
+			<label x-show="ruleType === 'header_compare'" class="w-full sm:w-28">
+				@RuleFieldLabel("Depth", "Maximum number of header levels to include from the anchor direction.")
 				<input name="ruleMaxHeaderDepth" value={ rule.MaxHeaderDepth } class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 			</label>
-			<label x-show="ruleType === 'header_compare'">
-				<div class="text-xs font-semibold uppercase text-slate-500">Ordered</div>
+			<label x-show="ruleType === 'header_compare'" class="w-full sm:w-32">
+				@RuleFieldLabel("Ordered", "Whether column order differences should be reported.")
 				<select name="ruleRequireOrder" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
 					<option value="false" selected?={ !rule.RequireOrder }>No</option>
 					<option value="true" selected?={ rule.RequireOrder }>Yes</option>
 				</select>
 			</label>
-			<label x-show="ruleType === 'anchor_scan_match'">
-				<div class="text-xs font-semibold uppercase text-slate-500">Scan Result</div>
+			<label x-show="ruleType === 'anchor_scan_match'" class="w-full sm:w-52">
+				@RuleFieldLabel("Scan Result", "Which scanned cell value is selected after moving from the anchor.")
 				<select name="ruleScanSelect" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
 					<option value="last_non_empty_before_blank" selected?={ rule.ScanSelect == "last_non_empty_before_blank" || rule.ScanSelect == "" }>Last value before blank</option>
 				</select>
 			</label>
-			<label x-show="ruleType === 'anchor_scan_match'">
-				<div class="text-xs font-semibold uppercase text-slate-500">Compare As</div>
+			<label x-show="ruleType === 'anchor_scan_match'" class="w-full sm:w-40">
+				@RuleFieldLabel("Compare As", "How the selected scan value is compared with the expected value.")
 				<select name="ruleCompareAs" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100">
 					<option value="date" selected?={ rule.CompareAs == "date" || rule.CompareAs == "" }>Date</option>
 					<option value="exact_text" selected?={ rule.CompareAs == "exact_text" }>Exact text</option>
@@ -333,7 +333,10 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 
 		<div x-show="ruleType === 'exact_text' || ruleType === 'anchor_scan_match'" class="mt-3">
 			<label>
-				<div class="text-xs font-semibold uppercase text-slate-500" x-text="ruleType === 'anchor_scan_match' ? 'Expected Value' : 'Expected Text'">Expected Text</div>
+				<div class="flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
+					<span x-text="ruleType === 'anchor_scan_match' ? 'Expected Value' : 'Expected Text'">Expected Text</span>
+					@RuleFieldHelp("Text or template to find or compare. Date placeholders use the validator date.")
+				</div>
 				<div x-data={ transferPathFieldExpression(rule.ExpectedText) }>
 					<input x-model="value" x-bind:title="value" name="ruleExpectedText" value={ rule.ExpectedText } placeholder="Actual performance from 10/5/2021 to {mm}/{dd}/{yy}" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 					<p x-cloak x-show="window.transferTemplateHasPlaceholder(value)" x-text="window.transferTemplatePreview(value, referenceDate)" class="mt-2 font-mono text-[11px] text-slate-500"></p>
@@ -345,4 +348,17 @@ templ CheckRuleEditor(parent CheckRowView, rule CheckRuleView) {
 			<p class="mt-3 whitespace-pre-line rounded-2xl bg-white px-3 py-2 font-mono text-xs leading-5 text-slate-700">{ rule.Detail }</p>
 		}
 	</details>
+}
+
+templ RuleFieldLabel(label string, help string) {
+	<div class="flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
+		<span>{ label }</span>
+		@RuleFieldHelp(help)
+	</div>
+}
+
+templ RuleFieldHelp(help string) {
+	<span tabindex="0" title={ help } aria-label={ help } class="inline-flex cursor-help items-center justify-center text-slate-400 transition hover:text-teal-700 focus:text-teal-700 focus:outline-none">
+		@HelpCircleIcon()
+	</span>
 }
