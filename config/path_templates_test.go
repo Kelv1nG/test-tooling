@@ -1,6 +1,9 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -28,6 +31,66 @@ func TestResolvePathTemplateRejectsUnsupportedPlaceholder(t *testing.T) {
 	_, err := ResolvePathTemplate(`/reports/{offset}`, referenceDate)
 	if err == nil {
 		t.Fatal("ResolvePathTemplate returned nil error for unsupported placeholder")
+	}
+}
+
+func TestResolvePathTemplateSingleMatchResolvesWildcard(t *testing.T) {
+	referenceDate := time.Date(2026, time.May, 31, 0, 0, 0, 0, time.UTC)
+	tempDir := t.TempDir()
+	expectedPath := filepath.Join(tempDir, "file_05_ignore_me_2026.xlsx")
+	if err := os.WriteFile(expectedPath, []byte("sample"), 0o644); err != nil {
+		t.Fatalf("WriteFile returned error: %v", err)
+	}
+
+	resolved, err := ResolvePathTemplateSingleMatch(
+		filepath.Join(tempDir, "file_{mm}_*_{yyyy}.xlsx"),
+		referenceDate,
+	)
+	if err != nil {
+		t.Fatalf("ResolvePathTemplateSingleMatch returned error: %v", err)
+	}
+	if resolved != expectedPath {
+		t.Fatalf("ResolvePathTemplateSingleMatch = %q, want %q", resolved, expectedPath)
+	}
+}
+
+func TestResolvePathTemplateSingleMatchReportsNoWildcardMatches(t *testing.T) {
+	referenceDate := time.Date(2026, time.May, 31, 0, 0, 0, 0, time.UTC)
+	tempDir := t.TempDir()
+
+	_, err := ResolvePathTemplateSingleMatch(
+		filepath.Join(tempDir, "file_{mm}_*_{yyyy}.xlsx"),
+		referenceDate,
+	)
+	if err == nil {
+		t.Fatal("ResolvePathTemplateSingleMatch returned nil error")
+	}
+	if !IsPathPatternNoMatch(err) {
+		t.Fatalf("expected no-match path pattern error, got %v", err)
+	}
+}
+
+func TestResolvePathTemplateSingleMatchRejectsAmbiguousWildcard(t *testing.T) {
+	referenceDate := time.Date(2026, time.May, 31, 0, 0, 0, 0, time.UTC)
+	tempDir := t.TempDir()
+	for _, name := range []string{
+		"file_05_first_2026.xlsx",
+		"file_05_second_2026.xlsx",
+	} {
+		if err := os.WriteFile(filepath.Join(tempDir, name), []byte("sample"), 0o644); err != nil {
+			t.Fatalf("WriteFile %s returned error: %v", name, err)
+		}
+	}
+
+	_, err := ResolvePathTemplateSingleMatch(
+		filepath.Join(tempDir, "file_{mm}_*_{yyyy}.xlsx"),
+		referenceDate,
+	)
+	if err == nil {
+		t.Fatal("ResolvePathTemplateSingleMatch returned nil error")
+	}
+	if !strings.Contains(err.Error(), "matched 2 files") {
+		t.Fatalf("expected ambiguous wildcard error, got %v", err)
 	}
 }
 

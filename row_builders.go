@@ -242,11 +242,15 @@ func applyCheckPathStatus(
 		return
 	}
 
-	currentFile, err := config.ResolvePathTemplate(row.File, referenceDate)
+	currentFile, err := config.ResolvePathTemplateSingleMatch(row.File, referenceDate)
 	if err != nil {
+		if config.IsPathPatternNoMatch(err) {
+			row.FileExists = false
+			return
+		}
 		row.Status = "Invalid template"
 		row.Badge = "rose"
-		row.Detail = fmt.Sprintf("file template: %v", err)
+		row.Detail = fmt.Sprintf("file pattern: %v", err)
 		return
 	}
 	row.FileExists = fileExistsOrFalse(currentFile)
@@ -257,11 +261,15 @@ func applyCheckPathStatus(
 	}
 
 	compareDate := addMonthsClamped(referenceDate, row.CompareOffsetMonths)
-	compareFile, err := config.ResolvePathTemplate(row.File, compareDate)
+	compareFile, err := config.ResolvePathTemplateSingleMatch(row.File, compareDate)
 	if err != nil {
+		if config.IsPathPatternNoMatch(err) {
+			row.CompareExists = false
+			return
+		}
 		row.Status = "Invalid template"
 		row.Badge = "rose"
-		row.Detail = fmt.Sprintf("compare file template: %v", err)
+		row.Detail = fmt.Sprintf("compare file pattern: %v", err)
 		return
 	}
 	row.CompareExists = fileExistsOrFalse(compareFile)

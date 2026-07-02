@@ -69,9 +69,9 @@ func runCheckConfigVerification(
 		return
 	}
 
-	currentFile, err := config.ResolvePathTemplate(row.File, referenceDate)
+	currentFile, err := config.ResolvePathTemplateSingleMatch(row.File, referenceDate)
 	if err != nil {
-		markEnabledRulesErrored(row, summary, fmt.Sprintf("resolve file template: %v", err))
+		markEnabledRulesErrored(row, summary, fmt.Sprintf("resolve current file pattern: %v", err))
 		return
 	}
 
@@ -130,9 +130,9 @@ func openCompareWorkbook(
 	}
 
 	compareDate := addMonthsClamped(referenceDate, compareOffsetMonths)
-	compareFile, err := config.ResolvePathTemplate(fileTemplate, compareDate)
+	compareFile, err := config.ResolvePathTemplateSingleMatch(fileTemplate, compareDate)
 	if err != nil {
-		return nil, fmt.Errorf("resolve compare file template: %w", err)
+		return nil, fmt.Errorf("resolve compare file pattern: %w", err)
 	}
 
 	workbook, err := excelize.OpenFile(compareFile)

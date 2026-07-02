@@ -68,6 +68,52 @@ func TestRunCheckVerificationExactMatch(t *testing.T) {
 	}
 }
 
+func TestRunCheckVerificationRejectsAmbiguousWildcardFile(t *testing.T) {
+	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
+	tempDir := t.TempDir()
+	for _, name := range []string{
+		"report_2026_06_first_30.xlsx",
+		"report_2026_06_second_30.xlsx",
+	} {
+		writeExactTextWorkbook(
+			t,
+			filepath.Join(tempDir, name),
+			"Actual performance from 10/5/2021 to 06/30/26",
+		)
+	}
+
+	rows, summary := runCheckVerification([]templates.CheckRowView{
+		{
+			Index:    1,
+			ExcelRow: 2,
+			ID:       "CHK-001",
+			File:     filepath.Join(tempDir, "report_{yyyy}_{mm}_*_{dd}.xlsx"),
+			Rules: []templates.CheckRuleView{
+				{
+					Index:        1,
+					ID:           "R001",
+					CheckID:      "CHK-001",
+					Name:         "Performance phrase",
+					Type:         "exact_text",
+					Enabled:      true,
+					Sheet:        "Report",
+					ExpectedText: "Actual performance from 10/5/2021 to {mm}/{dd}/{yy}",
+				},
+			},
+		},
+	}, referenceDate)
+
+	if summary.Errors != 1 {
+		t.Fatalf("summary.Errors = %d, want 1", summary.Errors)
+	}
+	if rows[0].Rules[0].Status != "Error" {
+		t.Fatalf("rule status = %q, want Error", rows[0].Rules[0].Status)
+	}
+	if !strings.Contains(rows[0].Rules[0].Detail, "matched 2 files") {
+		t.Fatalf("expected ambiguous wildcard detail, got %q", rows[0].Rules[0].Detail)
+	}
+}
+
 func TestRunCheckVerificationAnchorScanMatchDate(t *testing.T) {
 	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
 	tempDir := t.TempDir()
@@ -138,8 +184,8 @@ func TestRunCheckVerificationAnchorScanMatchDate(t *testing.T) {
 
 func TestRunCheckVerificationReportsAddedHeader(t *testing.T) {
 	tempDir := t.TempDir()
-	comparePath := filepath.Join(tempDir, "report_2026_04_30.xlsx")
-	currentPath := filepath.Join(tempDir, "report_2026_05_31.xlsx")
+	comparePath := filepath.Join(tempDir, "report_2026_04_previous_30.xlsx")
+	currentPath := filepath.Join(tempDir, "report_2026_05_current_31.xlsx")
 
 	writeHeaderSampleWorkbook(t, comparePath, false)
 	writeHeaderSampleWorkbook(t, currentPath, true)
@@ -148,7 +194,7 @@ func TestRunCheckVerificationReportsAddedHeader(t *testing.T) {
 		{
 			Index:               1,
 			ID:                  "CHK-001",
-			File:                filepath.Join(tempDir, "report_{yyyy}_{mm}_{dd}.xlsx"),
+			File:                filepath.Join(tempDir, "report_{yyyy}_{mm}_*_{dd}.xlsx"),
 			CompareOffsetMonths: -1,
 			Rules: []templates.CheckRuleView{
 				{
@@ -237,6 +283,25 @@ func TestRunCheckVerificationReportsRemovedHeader(t *testing.T) {
 	}
 	if !strings.Contains(rows[0].Detail, "-- column C") {
 		t.Fatalf("expected card detail to include removed header, got %q", rows[0].Detail)
+	}
+}
+
+func writeExactTextWorkbook(t *testing.T, path string, value string) {
+	t.Helper()
+
+	workbook := excelize.NewFile()
+	defaultSheet := workbook.GetSheetName(workbook.GetActiveSheetIndex())
+	if err := workbook.SetSheetName(defaultSheet, "Report"); err != nil {
+		t.Fatalf("SetSheetName returned error: %v", err)
+	}
+	if err := workbook.SetCellStr("Report", "B3", value); err != nil {
+		t.Fatalf("SetCellStr returned error: %v", err)
+	}
+	if err := workbook.SaveAs(path); err != nil {
+		t.Fatalf("SaveAs returned error: %v", err)
+	}
+	if err := workbook.Close(); err != nil {
+		t.Fatalf("Close returned error: %v", err)
 	}
 }
 
