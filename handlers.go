@@ -19,6 +19,8 @@ func (a *application) handleIndex(
 	)
 	data.ActiveTab = normalizeTab(request.URL.Query().Get("tab"))
 
+	// Default files are optional at startup; preload workbook-backed data only
+	// when both paths are present so the first page can still render cleanly.
 	if fileExistsOrFalse(a.defaultDefinitionsPath) && fileExistsOrFalse(a.defaultWorkbookPath) {
 		if err := a.populateConfigData(&data); err != nil {
 			data.LoadError = err.Error()
@@ -36,6 +38,8 @@ func (a *application) handleLoad(
 		return
 	}
 
+	// Loading is intentionally read-only: use the submitted paths to preview the
+	// workbook configuration without saving anything back to disk.
 	data, _, err := a.configuredPageDataFromRequest(request, tabConfiguration)
 	if err != nil {
 		data = a.pageDataFromRequest(request)
@@ -86,6 +90,8 @@ func (a *application) handleTransfer(
 		results,
 	)
 
+	// A completed run can still be a failed user operation when any mapping
+	// failed, so report the row-level results with an error status.
 	if summary.Errors > 0 {
 		data.TransferHasErrors = true
 		data.TransferMessage = fmt.Sprintf(
@@ -130,6 +136,8 @@ func (a *application) handleSaveTransfer(
 		return
 	}
 
+	// Parse the posted rows before persisting so validation errors can be shown
+	// against the exact values the user submitted.
 	rows, err := parseTransferRowsForm(request.Form, referenceDate)
 	data.TransferRows = rows
 	data.TransferCount = len(rows)
@@ -148,6 +156,8 @@ func (a *application) handleSaveTransfer(
 		return
 	}
 
+	// Reload after save so generated workbook values and normalized paths are
+	// reflected back into the editable view.
 	if err := a.populateConfigData(&data); err != nil {
 		data.SaveHasErrors = true
 		data.SaveMessage = fmt.Sprintf("Transfer rows were saved, but reload failed: %v", err)
@@ -184,6 +194,8 @@ func (a *application) handleSaveChecks(
 		return
 	}
 
+	// Parse the posted rows before persisting so validation errors can be shown
+	// against the exact values the user submitted.
 	rows, err := parseCheckRowsForm(request.Form, referenceDate)
 	data.CheckRows = rows
 	data.CheckCount = len(rows)
@@ -202,6 +214,8 @@ func (a *application) handleSaveChecks(
 		return
 	}
 
+	// Reload after save so generated IDs and workbook-backed defaults become
+	// the source of truth for the next edit.
 	if err := a.populateConfigData(&data); err != nil {
 		data.SaveHasErrors = true
 		data.SaveMessage = fmt.Sprintf("Check rows were saved, but reload failed: %v", err)
@@ -238,6 +252,8 @@ func (a *application) handleVerifyChecks(
 		return
 	}
 
+	// Verification runs against the current form payload rather than requiring
+	// a save first, which lets users test edits before committing them.
 	rows, err := parseCheckRowsForm(request.Form, referenceDate)
 	data.CheckRows = rows
 	data.CheckCount = len(rows)

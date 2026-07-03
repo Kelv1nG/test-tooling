@@ -16,6 +16,8 @@ var (
 	ErrInvalidHeaderSpan = errors.New("invalid header span")
 )
 
+// ExtractHeaders locates a known leaf header, expands across its contiguous
+// header span, then walks parent layers to build the full header paths.
 func ExtractHeaders(
 	workbook *excelize.File,
 	options ExtractOptions,
@@ -130,6 +132,8 @@ func newSheetContext(
 		}
 	}
 
+	// excelize.GetRows only reflects stored row values, so include merged ranges
+	// in the bounds or a blank merged cell can look like the edge of the sheet.
 	if merges.maxRow > bounds.maxRow {
 		bounds.maxRow = merges.maxRow
 	}
@@ -152,6 +156,8 @@ func findExactAnchor(
 ) (CellPosition, error) {
 	matches := make([]CellPosition, 0, 1)
 
+	// Match exactly and require a single hit so similar labels cannot silently
+	// choose the wrong table or header layer.
 	for rowIndex, row := range ctx.rows {
 		for columnIndex, value := range row {
 			if value != anchor {
@@ -215,6 +221,8 @@ func findLeafSpan(
 		before = append(before, next)
 	}
 
+	// The anchor defines the table we care about; blank cells on either side are
+	// treated as boundaries so neighboring tables are not pulled into the span.
 	span := make([]CellPosition, 0, len(before)+1)
 	for index := len(before) - 1; index >= 0; index-- {
 		span = append(span, before[index])
@@ -305,6 +313,8 @@ func buildHeaderPaths(
 	for _, leaf := range leafSpan {
 		path := make([]string, 0, len(parentLayerOffsets)+1)
 
+		// Offsets are discovered nearest-first, but paths should read from the
+		// outermost parent down to the leaf header.
 		for index := len(parentLayerOffsets) - 1; index >= 0; index-- {
 			position, ok := move(leaf, options.ParentDirection, parentLayerOffsets[index])
 			if !ok || !ctx.inBounds(position) {
@@ -320,6 +330,8 @@ func buildHeaderPaths(
 				continue
 			}
 
+			// Merged cells and repeated visual labels can surface the same text in
+			// adjacent layers; keep the semantic path compact.
 			if len(path) > 0 && path[len(path)-1] == value {
 				continue
 			}
@@ -327,6 +339,8 @@ func buildHeaderPaths(
 			path = append(path, value)
 		}
 
+		// Some sheets use the anchor row or column for values beneath the actual
+		// headers, so callers can opt out of appending that layer.
 		if !options.IgnoreAnchorLayer {
 			value, err := ctx.resolvedCellValue(leaf)
 			if err != nil {
@@ -379,6 +393,8 @@ func (ctx sheetContext) rawCellValue(
 func (ctx sheetContext) resolvedCellValue(
 	position CellPosition,
 ) (string, error) {
+	// Any cell inside a merged range should resolve to the visible value stored
+	// in the range's top-left cell.
 	if start, ok := ctx.merges.topLeft(position.Row, position.Column); ok {
 		return ctx.rawCellValue(start.Row, start.Column), nil
 	}

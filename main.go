@@ -15,7 +15,7 @@ func main() {
 	workbookPath := flag.String("workbook", "configuration-example.xlsx", "path to workbook")
 	flag.Parse()
 
-	app := mustNewApplication(
+	app := NewApplication(
 		*addr,
 		*definitionsPath,
 		*workbookPath,

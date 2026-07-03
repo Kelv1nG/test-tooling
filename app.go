@@ -13,7 +13,7 @@ type application struct {
 	logger                 *log.Logger
 }
 
-func mustNewApplication(
+func NewApplication(
 	listenAddr string,
 	definitionsPath string,
 	workbookPath string,
