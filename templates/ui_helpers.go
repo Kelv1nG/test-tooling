@@ -25,12 +25,30 @@ func referenceDateStateExpression(referenceDate string) string {
 	return fmt.Sprintf(`{ referenceDate: %q }`, referenceDate)
 }
 
-func checkConfigStateExpression(file string, compareOffsetMonths int) string {
+func checkConfigStateExpression(row CheckRowView, expandOnIssues bool) string {
 	return fmt.Sprintf(
-		`{ editing: false, file: %q, offset: %d }`,
-		file,
-		compareOffsetMonths,
+		`{ editing: false, expanded: %t, file: %q, offset: %d }`,
+		checkConfigStartsExpanded(row, expandOnIssues),
+		row.File,
+		row.CompareOffsetMonths,
 	)
+}
+
+func checkConfigStartsExpanded(row CheckRowView, expandOnIssues bool) bool {
+	if !expandOnIssues {
+		return false
+	}
+	if row.Badge == "amber" || row.Badge == "rose" {
+		return true
+	}
+	for _, rule := range row.Rules {
+		if rule.Badge == "amber" || rule.Badge == "rose" {
+			return true
+		}
+	}
+
+	// Form-level validation errors can leave rows without a per-row badge.
+	return row.Badge == "" && row.Status == ""
 }
 
 func ruleTypeStateExpression(ruleType string) string {

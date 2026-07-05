@@ -88,13 +88,13 @@ templ CheckingTab(data PageData) {
 
 				<div class="space-y-3" data-check-editor>
 					for _, row := range data.CheckRows {
-						@CheckConfigPanel(row)
+						@CheckConfigPanel(row, data.CheckHasIssues)
 					}
 					<template data-check-config-template>
 						@CheckConfigPanel(CheckRowView{
 							Index: len(data.CheckRows) + 1,
 							ExcelRow: 0,
-						})
+						}, false)
 					</template>
 				</div>
 
@@ -111,13 +111,13 @@ templ CheckingTab(data PageData) {
 	</section>
 }
 
-templ CheckConfigPanel(row CheckRowView) {
-	<div x-data={ checkConfigStateExpression(row.File, row.CompareOffsetMonths) } class="rounded-[1.25rem] border border-slate-200 bg-white p-4 transition hover:border-teal-200" data-check-config>
+templ CheckConfigPanel(row CheckRowView, expandOnIssues bool) {
+	<div x-data={ checkConfigStateExpression(row, expandOnIssues) } class="rounded-[1.25rem] border border-slate-200 bg-white p-4 transition hover:border-teal-200" data-check-config>
 		<input type="hidden" name="checkExcelRow" value={ row.ExcelRow }/>
 		<input type="hidden" name="checkID" value={ row.ID }/>
 
-		<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-			<div class="min-w-0 space-y-3">
+		<div class="flex min-w-0 items-start justify-between gap-3">
+			<div class="min-w-0 flex-1 space-y-3">
 				<div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-xs">
 					<div class="inline-flex min-w-0 items-center gap-2">
 						<span class="font-semibold uppercase tracking-wide text-slate-400">ID</span>
@@ -143,7 +143,7 @@ templ CheckConfigPanel(row CheckRowView) {
 					</div>
 				</div>
 
-				<div class="grid gap-2 xl:grid-cols-[minmax(0,1fr)_14rem_auto]">
+				<div class="grid gap-2 xl:grid-cols-2">
 					<div class="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
 						<input type="hidden" name="checkFile" x-bind:value="file"/>
 						<div class="text-[10px] font-semibold uppercase text-slate-500">File Template</div>
@@ -158,7 +158,7 @@ templ CheckConfigPanel(row CheckRowView) {
 					<div class="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
 						<input type="hidden" name="checkCompareOffsetMonths" x-bind:value="offset"/>
 						<div class="text-[10px] font-semibold uppercase text-slate-500">Compare Offset</div>
-						<select x-model.number="offset" x-bind:disabled="!editing" class="mt-1 w-full rounded-xl border px-3 py-2 text-sm text-slate-900 outline-none transition focus:ring-4" :class="editing ? 'border-teal-300 bg-white focus:border-pine focus:ring-teal-100' : 'cursor-default border-transparent bg-slate-50 focus:border-transparent focus:ring-0'">
+						<select x-model.number="offset" x-bind:disabled="!editing" class="mt-1 w-full rounded-xl border px-3 py-2 text-sm text-slate-900 outline-none transition focus:ring-4" :class="editing ? 'border-teal-300 bg-white pr-8 focus:border-pine focus:ring-teal-100' : 'cursor-default appearance-none border-transparent bg-slate-50 pr-3 focus:border-transparent focus:ring-0'">
 							if !compareOffsetIsStandard(row.CompareOffsetMonths) {
 								<option value={ row.CompareOffsetMonths }>{ compareOffsetLabel(row.CompareOffsetMonths) }</option>
 							}
@@ -169,6 +169,7 @@ templ CheckConfigPanel(row CheckRowView) {
 							<option value="-6">Previous 6 months</option>
 							<option value="-12">Previous 12 months</option>
 						</select>
+						<p x-cloak x-show="offset !== 0 && window.transferTemplateHasPlaceholder(file)" x-text="window.checkCompareTemplatePreview(file, referenceDate, offset)" class="mt-2 font-mono text-[11px] text-slate-500"></p>
 						if row.CompareOffsetMonths == 0 {
 							<span class="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">Compare N/A</span>
 						} else if row.CompareExists {
@@ -177,53 +178,64 @@ templ CheckConfigPanel(row CheckRowView) {
 							<span class="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Compare missing</span>
 						}
 					</div>
-					<div class="flex items-start gap-2 xl:justify-end">
-						<button type="button" data-check-edit-button x-on:click="editing = !editing" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">
-							@PencilIcon()
-							<span x-text="editing ? 'Done' : 'Edit'"></span>
-						</button>
-						<button type="button" onclick="window.removeCheckConfigRow(this)" aria-label="Remove check row" title="Remove check row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
-							@TrashIcon()
-						</button>
-					</div>
 				</div>
-
-				if row.Detail != "" {
-					<div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-						<p class="whitespace-pre-line font-mono text-xs leading-5 text-slate-700">{ row.Detail }</p>
-					</div>
-				}
+			</div>
+			<div class="flex shrink-0 items-center gap-2">
+				<button type="button" data-check-edit-button x-on:click="expanded = true; editing = !editing" x-bind:title="editing ? 'Finish editing' : 'Edit check config'" class="inline-flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">
+					@PencilIcon()
+					<span x-text="editing ? 'Done' : 'Edit'"></span>
+				</button>
+				<button type="button" x-on:click="expanded = !expanded" x-bind:aria-expanded="expanded" x-bind:title="expanded ? 'Collapse check config' : 'Expand check config'" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-teal-300 hover:text-teal-700">
+					<span class="sr-only" x-text="expanded ? 'Collapse check config' : 'Expand check config'"></span>
+					<span aria-hidden="true" class="inline-flex transition-transform" :class="expanded ? 'rotate-90 text-teal-700' : ''">
+						@ChevronRightIcon()
+					</span>
+				</button>
 			</div>
 		</div>
 
-		<details class="group mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-			<summary class="flex cursor-pointer list-none items-center justify-between gap-3">
-				<span class="text-sm font-semibold text-slate-900">Rules</span>
-				<span aria-hidden="true" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition group-open:rotate-90 group-open:text-teal-700 group-open:ring-teal-200">
-					@ChevronRightIcon()
-				</span>
-			</summary>
-
-			<div class="mt-3 space-y-3" data-check-rules>
-				for _, rule := range row.Rules {
-					@CheckRuleEditor(row, rule)
-				}
+		<div x-cloak x-show="expanded" x-transition class="mt-3 space-y-3">
+			<div class="flex flex-wrap items-start gap-2 sm:justify-end">
+				<button type="button" onclick="window.removeCheckConfigRow(this)" aria-label="Remove check row" title="Remove check row" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
+					@TrashIcon()
+				</button>
 			</div>
 
-			<template data-check-rule-template>
-				@CheckRuleEditor(row, CheckRuleView{
-					Index: len(row.Rules) + 1,
-					Enabled: true,
-					Type: "exact_text",
-					ScanSelect: "last_non_empty_before_blank",
-					CompareAs: "date",
-				})
-			</template>
+			if row.Detail != "" {
+				<div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+					<p class="whitespace-pre-line font-mono text-xs leading-5 text-slate-700">{ row.Detail }</p>
+				</div>
+			}
 
-			<div class="mt-4">
-				<button type="button" onclick="window.addCheckRule(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add rule</button>
-			</div>
-		</details>
+			<details class="group rounded-2xl border border-slate-200 bg-slate-50 p-3">
+				<summary class="flex cursor-pointer list-none items-center justify-between gap-3">
+					<span class="text-sm font-semibold text-slate-900">Rules</span>
+					<span aria-hidden="true" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition group-open:rotate-90 group-open:text-teal-700 group-open:ring-teal-200">
+						@ChevronRightIcon()
+					</span>
+				</summary>
+
+				<div class="mt-3 space-y-3" data-check-rules>
+					for _, rule := range row.Rules {
+						@CheckRuleEditor(row, rule)
+					}
+				</div>
+
+				<template data-check-rule-template>
+					@CheckRuleEditor(row, CheckRuleView{
+						Index: len(row.Rules) + 1,
+						Enabled: true,
+						Type: "exact_text",
+						ScanSelect: "last_non_empty_before_blank",
+						CompareAs: "date",
+					})
+				</template>
+
+				<div class="mt-4">
+					<button type="button" onclick="window.addCheckRule(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add rule</button>
+				</div>
+			</details>
+		</div>
 	</div>
 }
 
