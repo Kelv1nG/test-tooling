@@ -207,7 +207,7 @@ func runExactTextRule(
 		return
 	}
 
-	markRuleChanged(rule, summary, "Exact text not found in the current file.")
+	markRuleNotFound(rule, summary, "Exact text not found in the current file.")
 }
 
 func runAnchorScanRule(
@@ -456,6 +456,17 @@ func markRuleChanged(
 	summary.Changed++
 }
 
+func markRuleNotFound(
+	rule *templates.CheckRuleView,
+	summary *templates.CheckSummaryView,
+	detail string,
+) {
+	rule.Status = "Not found"
+	rule.Badge = "amber"
+	rule.Detail = detail
+	summary.Changed++
+}
+
 func markRuleError(
 	rule *templates.CheckRuleView,
 	summary *templates.CheckSummaryView,
@@ -472,12 +483,13 @@ func applyCheckConfigStatus(row *templates.CheckRowView) {
 	for _, rule := range row.Rules {
 		statusCounts[rule.Status]++
 	}
+	changedCount := statusCounts["Changed"] + statusCounts["Not found"]
 
 	switch {
 	case statusCounts["Error"] > 0:
 		row.Status = "Error"
 		row.Badge = "rose"
-	case statusCounts["Changed"] > 0:
+	case changedCount > 0:
 		row.Status = "Changed"
 		row.Badge = "amber"
 	case statusCounts["Matched"] > 0:
@@ -491,7 +503,7 @@ func applyCheckConfigStatus(row *templates.CheckRowView) {
 	detail := fmt.Sprintf(
 		"%d matched, %d changed, %d errors, %d skipped.",
 		statusCounts["Matched"],
-		statusCounts["Changed"],
+		changedCount,
 		statusCounts["Error"],
 		statusCounts["Disabled"]+statusCounts[""],
 	)
@@ -509,7 +521,7 @@ func checkConfigHighlights(
 	highlights := make([]string, 0)
 
 	for _, rule := range rules {
-		if rule.Status != "Changed" && rule.Status != "Error" {
+		if rule.Status != "Changed" && rule.Status != "Not found" && rule.Status != "Error" {
 			continue
 		}
 

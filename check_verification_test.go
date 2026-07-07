@@ -68,6 +68,56 @@ func TestRunCheckVerificationExactMatch(t *testing.T) {
 	}
 }
 
+func TestRunCheckVerificationExactMatchNotFound(t *testing.T) {
+	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
+	tempDir := t.TempDir()
+	workbookPath := filepath.Join(tempDir, "report_2026_06_30.xlsx")
+	writeExactTextWorkbook(t, workbookPath, "Actual performance from 10/5/2021 to 05/31/26")
+
+	rows, summary := runCheckVerification([]templates.CheckRowView{
+		{
+			Index:    1,
+			ExcelRow: 2,
+			ID:       "CHK-001",
+			File:     filepath.Join(tempDir, "report_{yyyy}_{mm}_{dd}.xlsx"),
+			Rules: []templates.CheckRuleView{
+				{
+					Index:        1,
+					ID:           "R001",
+					CheckID:      "CHK-001",
+					Name:         "Performance phrase",
+					Type:         "exact_text",
+					Enabled:      true,
+					Sheet:        "Report",
+					ExpectedText: "Actual performance from 10/5/2021 to {mm}/{dd}/{yy}",
+				},
+			},
+		},
+	}, referenceDate)
+
+	if summary.Changed != 1 {
+		t.Fatalf("summary.Changed = %d, want 1", summary.Changed)
+	}
+	if summary.Errors != 0 {
+		t.Fatalf("summary.Errors = %d, want 0", summary.Errors)
+	}
+	if rows[0].Status != "Changed" {
+		t.Fatalf("row status = %q, want Changed", rows[0].Status)
+	}
+	if rows[0].Rules[0].Status != "Not found" {
+		t.Fatalf("rule status = %q, want Not found", rows[0].Rules[0].Status)
+	}
+	if rows[0].Rules[0].Badge != "amber" {
+		t.Fatalf("rule badge = %q, want amber", rows[0].Rules[0].Badge)
+	}
+	if !strings.Contains(rows[0].Rules[0].Detail, "Exact text not found") {
+		t.Fatalf("unexpected rule detail: %q", rows[0].Rules[0].Detail)
+	}
+	if !strings.Contains(rows[0].Detail, "Exact text not found") {
+		t.Fatalf("expected card detail to include not found detail, got %q", rows[0].Detail)
+	}
+}
+
 func TestRunCheckVerificationRejectsAmbiguousWildcardFile(t *testing.T) {
 	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
 	tempDir := t.TempDir()
