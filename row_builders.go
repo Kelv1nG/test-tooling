@@ -160,6 +160,33 @@ func buildCheckConfigs(
 	return checks
 }
 
+func mergeSingleCheckRow(
+	existingRows []templates.CheckRowView,
+	targetRow templates.CheckRowView,
+) []templates.CheckRowView {
+	merged := append([]templates.CheckRowView(nil), existingRows...)
+	for index := range merged {
+		if merged[index].ID != "" && merged[index].ID == targetRow.ID {
+			merged[index] = targetRow
+			return reindexCheckRows(merged)
+		}
+	}
+
+	merged = append(merged, targetRow)
+	return reindexCheckRows(merged)
+}
+
+func reindexCheckRows(rows []templates.CheckRowView) []templates.CheckRowView {
+	for index := range rows {
+		rows[index].Index = index + 1
+		for ruleIndex := range rows[index].Rules {
+			rows[index].Rules[ruleIndex].Index = ruleIndex + 1
+		}
+	}
+
+	return rows
+}
+
 func buildCheckConfig(row templates.CheckRowView) config.FileCheckConfig {
 	return config.FileCheckConfig{
 		ExcelRow:            row.ExcelRow,

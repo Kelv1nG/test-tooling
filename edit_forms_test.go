@@ -114,6 +114,44 @@ func TestParseCheckRowsFormGeneratesMissingCheckID(t *testing.T) {
 	}
 }
 
+func TestFilterSingleCheckRowsFormKeepsOnlyTargetConfig(t *testing.T) {
+	values := map[string][]string{
+		"checkExcelRow":            []string{"2", "3"},
+		"checkID":                  []string{"CHK-001", "CHK-002"},
+		"checkFile":                []string{"first.xlsx", "second.xlsx"},
+		"checkCompareOffsetMonths": []string{"0", "-1"},
+		"ruleParentIndex":          []string{"1", "2", "2"},
+		"ruleExcelRow":             []string{"2", "3", "4"},
+		"ruleID":                   []string{"R001", "R001", "R002"},
+		"ruleName":                 []string{"First rule", "Second rule", "Third rule"},
+		"ruleType":                 []string{"exact_text", "exact_text", "anchor_scan_match"},
+		"ruleEnabled":              []string{"true", "true", "false"},
+		"ruleSheet":                []string{"Report", "Report", "Report"},
+		"ruleAnchor":               []string{"", "", "Anchor"},
+		"ruleParentDirection":      []string{"", "", "down"},
+		"ruleMaxHeaderDepth":       []string{"", "", ""},
+		"ruleRequireOrder":         []string{"false", "false", "false"},
+		"ruleScanSelect":           []string{"", "", "last_non_empty_before_blank"},
+		"ruleExpectedText":         []string{"first", "second", "third"},
+		"ruleCompareAs":            []string{"", "", "date"},
+	}
+
+	filtered, err := filterSingleCheckRowsForm(values, 2)
+	if err != nil {
+		t.Fatalf("filterSingleCheckRowsForm returned error: %v", err)
+	}
+
+	if got := filtered["checkID"]; len(got) != 1 || got[0] != "CHK-002" {
+		t.Fatalf("filtered checkID = %#v", got)
+	}
+	if got := filtered["ruleID"]; len(got) != 2 || got[0] != "R001" || got[1] != "R002" {
+		t.Fatalf("filtered ruleID = %#v", got)
+	}
+	if got := filtered["ruleParentIndex"]; len(got) != 2 || got[0] != "1" || got[1] != "1" {
+		t.Fatalf("filtered ruleParentIndex = %#v", got)
+	}
+}
+
 func TestParseCheckRowsFormRequiresCompareOffsetForHeaderComparison(t *testing.T) {
 	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
 

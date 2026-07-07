@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 func (a *application) handleIndex(
@@ -185,6 +186,7 @@ func (a *application) handleSaveChecks(
 		a.renderResponse(writer, request, data, http.StatusBadRequest)
 		return
 	}
+	existingRows := data.CheckRows
 
 	referenceDate, err := parseReferenceDate(data.CheckReferenceDate)
 	if err != nil {
@@ -194,11 +196,34 @@ func (a *application) handleSaveChecks(
 		return
 	}
 
+	saveCheckIndex, saveSingleCheck, err := parseSaveCheckIndex(request.FormValue("saveCheckIndex"))
+	if err != nil {
+		data.SaveHasErrors = true
+		data.SaveMessage = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	checkFormValues := request.Form
+	if saveSingleCheck {
+		checkFormValues, err = filterSingleCheckRowsForm(request.Form, saveCheckIndex)
+		if err != nil {
+			data.SaveHasErrors = true
+			data.SaveMessage = err.Error()
+			a.renderResponse(writer, request, data, http.StatusBadRequest)
+			return
+		}
+	}
+
 	// Parse the posted rows before persisting so validation errors can be shown
 	// against the exact values the user submitted.
-	rows, err := parseCheckRowsForm(request.Form, referenceDate)
+	rows, err := parseCheckRowsForm(checkFormValues, referenceDate)
 	data.CheckRows = rows
 	data.CheckCount = len(rows)
+	if saveSingleCheck && len(rows) == 1 {
+		data.CheckRows = mergeSingleCheckRow(existingRows, rows[0])
+		data.CheckCount = len(data.CheckRows)
+	}
 
 	if err != nil {
 		data.SaveHasErrors = true
@@ -207,7 +232,18 @@ func (a *application) handleSaveChecks(
 		return
 	}
 
-	if err := a.saveCheckRows(data.DefinitionsPath, data.WorkbookPath, rows); err != nil {
+	rowsToSave := rows
+	if saveSingleCheck {
+		if len(rows) != 1 {
+			data.SaveHasErrors = true
+			data.SaveMessage = "single-card save did not include exactly one check config"
+			a.renderResponse(writer, request, data, http.StatusBadRequest)
+			return
+		}
+		rowsToSave = mergeSingleCheckRow(existingRows, rows[0])
+	}
+
+	if err := a.saveCheckRows(data.DefinitionsPath, data.WorkbookPath, rowsToSave); err != nil {
 		data.SaveHasErrors = true
 		data.SaveMessage = err.Error()
 		a.renderResponse(writer, request, data, http.StatusInternalServerError)
@@ -223,8 +259,25 @@ func (a *application) handleSaveChecks(
 		return
 	}
 
-	data.SaveMessage = fmt.Sprintf("Saved %d check config(s) to the workbook.", len(rows))
+	if saveSingleCheck && len(rows) == 1 {
+		data.SaveMessage = fmt.Sprintf("Saved check config %s to the workbook.", rows[0].ID)
+	} else {
+		data.SaveMessage = fmt.Sprintf("Saved %d check config(s) to the workbook.", len(rows))
+	}
 	a.renderResponse(writer, request, data, http.StatusOK)
+}
+
+func parseSaveCheckIndex(value string) (int, bool, error) {
+	if value == "" {
+		return 0, false, nil
+	}
+
+	index, err := strconv.Atoi(value)
+	if err != nil || index < 1 {
+		return 0, false, fmt.Errorf("save target check config is invalid")
+	}
+
+	return index, true, nil
 }
 
 func (a *application) handleVerifyChecks(

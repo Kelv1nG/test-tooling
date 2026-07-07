@@ -187,6 +187,81 @@ func parseCheckRowsForm(
 	return rows, nil
 }
 
+func filterSingleCheckRowsForm(
+	values map[string][]string,
+	targetIndex int,
+) (map[string][]string, error) {
+	if targetIndex < 1 {
+		return nil, fmt.Errorf("save target must be a positive check config index")
+	}
+
+	targetOffset := targetIndex - 1
+	filtered := make(map[string][]string)
+	for _, field := range checkConfigFieldNames() {
+		source := values[field]
+		if targetOffset >= len(source) {
+			return nil, fmt.Errorf("save target check config %d was not submitted", targetIndex)
+		}
+		filtered[field] = []string{source[targetOffset]}
+	}
+
+	parentIndexes := values["ruleParentIndex"]
+	ruleFields := checkRuleFieldNames()
+	for _, field := range ruleFields {
+		if len(values[field]) != len(parentIndexes) {
+			return nil, fmt.Errorf("submitted check configs were incomplete")
+		}
+	}
+
+	for ruleIndex, parentIndexValue := range parentIndexes {
+		parentIndex, err := strconv.Atoi(strings.TrimSpace(parentIndexValue))
+		if err != nil {
+			continue
+		}
+		if parentIndex != targetIndex {
+			continue
+		}
+
+		for _, field := range ruleFields {
+			value := values[field][ruleIndex]
+			if field == "ruleParentIndex" {
+				value = "1"
+			}
+			filtered[field] = append(filtered[field], value)
+		}
+	}
+
+	return filtered, nil
+}
+
+func checkConfigFieldNames() []string {
+	return []string{
+		"checkExcelRow",
+		"checkID",
+		"checkFile",
+		"checkCompareOffsetMonths",
+	}
+}
+
+func checkRuleFieldNames() []string {
+	return []string{
+		"ruleParentIndex",
+		"ruleExcelRow",
+		"ruleID",
+		"ruleName",
+		"ruleType",
+		"ruleEnabled",
+		"ruleSheet",
+		"ruleAnchor",
+		"ruleParentDirection",
+		"ruleMaxHeaderDepth",
+		"ruleRequireOrder",
+		"ruleScanSelect",
+		"ruleExpectedText",
+		"ruleCompareAs",
+	}
+}
+
 func collectUsedCheckIDs(ids []string) map[string]struct{} {
 	used := make(map[string]struct{}, len(ids))
 	for _, id := range ids {
