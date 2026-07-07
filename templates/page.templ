@@ -157,6 +157,31 @@ templ PageScripts() {
 	    }
 	  };
 
+	  window.checkConfigIndexVisible = (index, page, pageSize) => {
+	    const rowNumber = Number(index || 0);
+	    const currentPage = Math.max(1, Number(page || 1));
+	    const size = Math.max(1, Number(pageSize || 10));
+	    const start = (currentPage - 1) * size;
+	    return rowNumber > start && rowNumber <= start + size;
+	  };
+
+	  window.refreshCheckPagination = (editor, options = {}) => {
+	    const root = editor?.closest("[data-check-pagination-root]");
+	    if (!root || !window.Alpine) {
+	      return;
+	    }
+
+	    const state = window.Alpine.$data(root);
+	    if (!state || typeof state.refreshCheckPagination !== "function") {
+	      return;
+	    }
+
+	    state.refreshCheckPagination(editor);
+	    if (options.page === "last" && typeof state.goToCheckPage === "function") {
+	      state.goToCheckPage(state.checkPageCount);
+	    }
+	  };
+
 	  window.refreshTransferRowNumbers = (root) => {
 	    root.querySelectorAll("[data-transfer-row-number]").forEach((node, index) => {
 	      node.textContent = String(index + 1);
@@ -262,6 +287,11 @@ templ PageScripts() {
 	        idDisplay.textContent = idInput.value || "Generated on save";
 	        idDisplay.title = idInput.value;
 	      }
+	      config.dataset.checkConfigIndex = String(rowNumber);
+	      const saveButton = config.querySelector("button[name='saveCheckIndex']");
+	      if (saveButton) {
+	        saveButton.value = String(rowNumber);
+	      }
 
 	      config.querySelectorAll("input[name='ruleParentIndex']").forEach((input) => {
 	        input.value = String(rowNumber);
@@ -285,6 +315,7 @@ templ PageScripts() {
 	    }
 
 	    window.refreshCheckConfigIndexes(editor);
+	    window.refreshCheckPagination(editor, { page: "last" });
 	  };
 
 	  window.removeCheckConfigRow = (button) => {
@@ -296,6 +327,7 @@ templ PageScripts() {
 
 	    config.remove();
 	    window.refreshCheckConfigIndexes(editor);
+	    window.refreshCheckPagination(editor);
 	  };
 
 	  window.addCheckRule = (button) => {

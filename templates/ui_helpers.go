@@ -2,6 +2,8 @@ package templates
 
 import "fmt"
 
+const checkRowsPerPage = 10
+
 func appShellExpression(activeTab string) string {
 	return fmt.Sprintf("appShell(%q)", activeTab)
 }
@@ -23,6 +25,41 @@ func transferPathFieldExpression(value string) string {
 
 func referenceDateStateExpression(referenceDate string) string {
 	return fmt.Sprintf(`{ referenceDate: %q }`, referenceDate)
+}
+
+func checkingTabStateExpression(
+	referenceDate string,
+	checkCount int,
+	checkPage int,
+) string {
+	if checkPage < 1 {
+		checkPage = 1
+	}
+
+	return fmt.Sprintf(
+		`{
+			referenceDate: %q,
+			checkPage: %d,
+			checkPageSize: %d,
+			checkCount: %d,
+			init() { this.goToCheckPage(this.checkPage); },
+			get checkPageCount() { return Math.max(1, Math.ceil(this.checkCount / this.checkPageSize)); },
+			get checkPageStart() { return this.checkCount === 0 ? 0 : ((this.checkPage - 1) * this.checkPageSize) + 1; },
+			get checkPageEnd() { return Math.min(this.checkPage * this.checkPageSize, this.checkCount); },
+			goToCheckPage(page) {
+				const nextPage = Number(page) || 1;
+				this.checkPage = Math.min(Math.max(nextPage, 1), this.checkPageCount);
+			},
+			refreshCheckPagination(editor) {
+				this.checkCount = editor?.querySelectorAll("[data-check-config]").length ?? this.checkCount;
+				this.goToCheckPage(this.checkPage);
+			}
+		}`,
+		referenceDate,
+		checkPage,
+		checkRowsPerPage,
+		checkCount,
+	)
 }
 
 func checkConfigStateExpression(row CheckRowView, expandOnIssues bool) string {

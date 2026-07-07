@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ func (a *application) newPageData(
 		Strategy:           string(defaultTransferMode),
 		ReferenceDate:      defaultReferenceDate(),
 		CheckReferenceDate: defaultReferenceDate(),
+		CheckPage:          1,
 	}
 }
 
@@ -51,6 +53,7 @@ func (a *application) pageDataFromRequest(
 	data.Strategy = string(parseTransferMode(request.FormValue("strategy")))
 	data.ReferenceDate = normalizeReferenceDate(request.FormValue("referenceDate"))
 	data.CheckReferenceDate = normalizeReferenceDate(request.FormValue("checkReferenceDate"))
+	data.CheckPage = normalizeCheckPage(request.FormValue("checkPage"))
 	data.ActiveTab = normalizeTab(request.FormValue("activeTab"))
 	return data
 }
@@ -177,4 +180,13 @@ func normalizeTab(value string) string {
 	default:
 		return tabConfiguration
 	}
+}
+
+func normalizeCheckPage(value string) int {
+	page, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil || page < 1 {
+		return 1
+	}
+
+	return page
 }
