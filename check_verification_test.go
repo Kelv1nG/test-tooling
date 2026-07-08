@@ -60,6 +60,9 @@ func TestRunCheckVerificationExactMatch(t *testing.T) {
 	if rows[0].Status != "Matched" {
 		t.Fatalf("row status = %q, want %q", rows[0].Status, "Matched")
 	}
+	if rows[0].ResolvedFile != workbookPath {
+		t.Fatalf("resolved file = %q, want %q", rows[0].ResolvedFile, workbookPath)
+	}
 	if rows[0].Rules[0].Status != "Matched" {
 		t.Fatalf("rule status = %q, want %q", rows[0].Rules[0].Status, "Matched")
 	}
@@ -190,6 +193,17 @@ func TestRunCheckVerificationWithProgressReportsEachCompletedRow(t *testing.T) {
 	}
 	if rows[1].ID != "CHK-002" || rows[1].Status != "Changed" {
 		t.Fatalf("second row = %+v, want CHK-002 changed", rows[1])
+	}
+
+	summaryRows := buildCheckSummaryRows(rows)
+	if len(summaryRows) != 2 {
+		t.Fatalf("got %d summary rows, want 2", len(summaryRows))
+	}
+	if summaryRows[0].CurrentFile != matchingPath {
+		t.Fatalf("summary current file = %q, want %q", summaryRows[0].CurrentFile, matchingPath)
+	}
+	if summaryRows[1].Status != "Not found" {
+		t.Fatalf("summary changed status = %q, want Not found", summaryRows[1].Status)
 	}
 }
 
@@ -347,6 +361,12 @@ func TestRunCheckVerificationReportsAddedHeader(t *testing.T) {
 	}
 	if rows[0].Rules[0].Status != "Changed" {
 		t.Fatalf("rule status = %q, want Changed", rows[0].Rules[0].Status)
+	}
+	if rows[0].ResolvedFile != currentPath {
+		t.Fatalf("resolved current file = %q, want %q", rows[0].ResolvedFile, currentPath)
+	}
+	if rows[0].ResolvedCompareFile != comparePath {
+		t.Fatalf("resolved compare file = %q, want %q", rows[0].ResolvedCompareFile, comparePath)
 	}
 	if !strings.Contains(rows[0].Rules[0].Detail, "++ column C") {
 		t.Fatalf("unexpected rule detail: %q", rows[0].Rules[0].Detail)

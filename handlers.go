@@ -127,6 +127,7 @@ func (a *application) handleTransfer(
 	)
 	results, summary := runner.run(configuration.FileTransferMaps)
 	data.TransferResults = results
+	data.TransferSummaryRows = buildTransferSummaryRows(results)
 	data.TransferSummary = summary
 	data.TransferRows = applyTransferResultsToRows(
 		data.TransferRows,

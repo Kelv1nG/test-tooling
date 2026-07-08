@@ -4,16 +4,13 @@ templ FileTransferTab(data PageData) {
 	<section
 		x-cloak
 		x-show="activeTab === 'file-transfer'"
-		x-data={ strategyStateExpression(data.Strategy, data.ReferenceDate) }
+		x-data={ strategyStateExpression(data.Strategy, data.ReferenceDate, data.TransferSummary.HasRun) }
 		data-tab-panel="file-transfer"
 		class="rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8"
 	>
 		if data.HasConfig {
 			<div class="space-y-6">
-				<div class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-					@TransferControlsCard(data)
-					@TransferSummaryCard(data)
-				</div>
+				@TransferControlsCard(data)
 				@TransferTableCard(data)
 			</div>
 		} else {
@@ -132,68 +129,14 @@ templ TransferControlsCard(data PageData) {
 	</div>
 }
 
-templ TransferSummaryCard(data PageData) {
-	<div class="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-		<div class="mb-4">
-			<h3 class="text-lg font-semibold text-slate-900">Execution summary</h3>
-			<p class="mt-1 text-sm text-slate-600">High-level outcome from the latest transfer run.</p>
-		</div>
-
-		if data.TransferMessage != "" {
-			<div class={ transferMessageClasses(data.TransferHasErrors) }>
-				<div class="font-semibold">{ data.TransferMessage }</div>
-				if data.TransferSummary.HasRun {
-					<div class="mt-2 text-sm">
-						Attempted { data.TransferSummary.Attempted } mapping(s),
-						created { data.TransferSummary.Created },
-						overwritten { data.TransferSummary.Overwritten },
-						skipped { data.TransferSummary.Skipped },
-						errors { data.TransferSummary.Errors }.
-					</div>
-				}
-			</div>
-		}
-
-		<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-			<div class="rounded-[1.5rem] bg-teal-50 px-5 py-4">
-				<p class="text-3xl font-semibold text-slate-900">{ data.TransferCount }</p>
-				<p class="mt-1 text-sm text-slate-600">configured rows</p>
-			</div>
-			<div class="rounded-[1.5rem] bg-slate-100 px-5 py-4">
-				<p class="text-3xl font-semibold text-slate-900">
-					if data.TransferSummary.HasRun {
-						{ data.TransferSummary.Attempted }
-					} else {
-						0
-					}
-				</p>
-				<p class="mt-1 text-sm text-slate-600">attempted</p>
-			</div>
-			<div class="rounded-[1.5rem] bg-emerald-100 px-5 py-4">
-				<p class="text-3xl font-semibold text-emerald-800">{ data.TransferSummary.Created }</p>
-				<p class="mt-1 text-sm text-emerald-700">created</p>
-			</div>
-			<div class="rounded-[1.5rem] bg-amber-100 px-5 py-4">
-				<p class="text-3xl font-semibold text-amber-800">{ data.TransferSummary.Overwritten }</p>
-				<p class="mt-1 text-sm text-amber-700">overwritten</p>
-			</div>
-			<div class="rounded-[1.5rem] bg-slate-200 px-5 py-4">
-				<p class="text-3xl font-semibold text-slate-800">{ data.TransferSummary.Skipped }</p>
-				<p class="mt-1 text-sm text-slate-700">skipped</p>
-			</div>
-			<div class="rounded-[1.5rem] bg-rose-100 px-5 py-4">
-				<p class="text-3xl font-semibold text-rose-800">{ data.TransferSummary.Errors }</p>
-				<p class="mt-1 text-sm text-rose-700">errors</p>
-			</div>
-		</div>
-	</div>
-}
-
 templ TransferTableCard(data PageData) {
-	<div class="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-		<div class="mb-4">
-			<h3 class="text-lg font-semibold text-slate-900">Configured file transfers</h3>
-			<p class="mt-1 text-sm text-slate-600">Edit the workbook-backed templates here, then save before running transfers.</p>
+	<div class="space-y-4 rounded-[1.5rem] border border-slate-200 bg-white p-5">
+		@TransferViewControls(data)
+		<div>
+			<div>
+				<h3 class="text-lg font-semibold text-slate-900">File transfer rows</h3>
+				<p class="mt-1 text-sm text-slate-600">Edit mappings or review the latest run summary.</p>
+			</div>
 		</div>
 
 		<form
@@ -211,16 +154,17 @@ templ TransferTableCard(data PageData) {
 			<input type="hidden" name="strategy" x-bind:value="strategy"/>
 			<input type="hidden" name="referenceDate" x-bind:value="referenceDate"/>
 
-			if data.SaveMessage != "" {
-				<div class={ saveMessageClasses(data.SaveHasErrors) }>{ data.SaveMessage }</div>
-			}
+			<div x-show="transferTableView === 'configured'" class="space-y-4">
+				if data.SaveMessage != "" {
+					<div class={ saveMessageClasses(data.SaveHasErrors) }>{ data.SaveMessage }</div>
+				}
 
-			<div class="flex flex-wrap items-center gap-3">
-				<button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-ember px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">Save workbook changes</button>
-				<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Saving changes...</div>
-			</div>
+				<div class="flex flex-wrap items-center gap-3">
+					<button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-ember px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">Save workbook changes</button>
+					<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Saving changes...</div>
+				</div>
 
-			<div data-transfer-editor class="overflow-x-auto">
+				<div data-transfer-editor class="overflow-x-auto">
 				<table class="min-w-full divide-y divide-slate-200 text-left text-sm">
 					<thead>
 						<tr class="text-slate-500">
@@ -327,9 +271,67 @@ templ TransferTableCard(data PageData) {
 				</template>
 			</div>
 
-			<div class="flex justify-center pt-2">
-				<button type="button" onclick="window.addTransferRow(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add row</button>
+				<div class="flex justify-center pt-2">
+					<button type="button" onclick="window.addTransferRow(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add row</button>
+				</div>
+			</div>
+			<div x-show="transferTableView === 'summary'">
+				@TransferRunSummaryTable(data)
 			</div>
 		</form>
 	</div>
+}
+
+templ TransferViewControls(data PageData) {
+	<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+		<div class="inline-flex rounded-2xl bg-white p-1 ring-1 ring-slate-200">
+			<button type="button" x-on:click="transferTableView = 'configured'" :class="transferTableView === 'configured' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-sm font-semibold transition">Configured rows</button>
+			<button type="button" x-on:click="transferTableView = 'summary'" :class="transferTableView === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-sm font-semibold transition">Summary</button>
+		</div>
+		<div x-show="transferTableView === 'summary'" class="flex flex-wrap items-center gap-2">
+			<div class="inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200">
+				<button type="button" x-on:click="transferSummaryFilter = 'all'" :class="transferSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">All</button>
+				<button type="button" x-on:click="transferSummaryFilter = 'created'" :class="transferSummaryFilter === 'created' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Created</button>
+				<button type="button" x-on:click="transferSummaryFilter = 'overwritten'" :class="transferSummaryFilter === 'overwritten' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Overwritten</button>
+				<button type="button" x-on:click="transferSummaryFilter = 'skipped'" :class="transferSummaryFilter === 'skipped' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Skipped</button>
+				<button type="button" x-on:click="transferSummaryFilter = 'error'" :class="transferSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Errors</button>
+			</div>
+			<p class="text-sm font-medium text-slate-600">{ len(data.TransferSummaryRows) } row(s)</p>
+		</div>
+	</div>
+}
+
+templ TransferRunSummaryTable(data PageData) {
+	if !data.TransferSummary.HasRun {
+		<div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No transfer run yet.</div>
+	} else {
+		<div>
+			<div class="overflow-x-auto rounded-2xl border border-slate-200">
+				<table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+					<thead class="bg-slate-50">
+						<tr class="text-xs font-semibold uppercase text-slate-500">
+							<th class="px-3 py-2">#</th>
+							<th class="px-3 py-2">Status</th>
+							<th class="px-3 py-2">Source</th>
+							<th class="px-3 py-2">Destination</th>
+							<th class="px-3 py-2">Detail</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, row := range data.TransferSummaryRows {
+							<tr x-show={ summaryVisibilityExpression(row.Status, "transferSummaryFilter") } class="align-top">
+								<td class="whitespace-nowrap px-3 py-2 font-medium text-slate-500">{ row.Index }</td>
+								<td class="whitespace-nowrap px-3 py-2">
+									<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
+								</td>
+								<td class="px-3 py-2">@FilePathLink(row.Source)</td>
+								<td class="px-3 py-2">@FilePathLink(row.Destination)</td>
+								<td class="min-w-[14rem] px-3 py-2 text-slate-700">{ row.Detail }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
 }

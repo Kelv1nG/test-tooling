@@ -151,6 +151,7 @@ func runCheckConfigVerification(
 		markEnabledRulesErrored(row, summary, fmt.Sprintf("resolve current file pattern: %v", err))
 		return
 	}
+	row.ResolvedFile = currentFile
 
 	currentWorkbook, err := excelize.OpenFile(currentFile)
 	if err != nil {
@@ -178,7 +179,9 @@ func runCheckConfigVerification(
 		switch config.VerificationRuleType(rule.Type) {
 		case config.VerificationRuleTypeHeaderCompare:
 			if compareWorkbook == nil && compareWorkbookErr == nil {
-				compareWorkbook, compareWorkbookErr = openCompareWorkbook(row.File, row.CompareOffsetMonths, referenceDate)
+				var compareFile string
+				compareWorkbook, compareFile, compareWorkbookErr = openCompareWorkbook(row.File, row.CompareOffsetMonths, referenceDate)
+				row.ResolvedCompareFile = compareFile
 			}
 			if compareWorkbookErr != nil {
 				markRuleError(rule, summary, compareWorkbookErr.Error())
@@ -201,23 +204,23 @@ func openCompareWorkbook(
 	fileTemplate string,
 	compareOffsetMonths int,
 	referenceDate time.Time,
-) (*excelize.File, error) {
+) (*excelize.File, string, error) {
 	if compareOffsetMonths == 0 {
-		return nil, fmt.Errorf("compare offset months must be non-zero for header comparison")
+		return nil, "", fmt.Errorf("compare offset months must be non-zero for header comparison")
 	}
 
 	compareDate := addMonthsClamped(referenceDate, compareOffsetMonths)
 	compareFile, err := config.ResolvePathTemplateSingleMatch(fileTemplate, compareDate)
 	if err != nil {
-		return nil, fmt.Errorf("resolve compare file pattern: %w", err)
+		return nil, "", fmt.Errorf("resolve compare file pattern: %w", err)
 	}
 
 	workbook, err := excelize.OpenFile(compareFile)
 	if err != nil {
-		return nil, fmt.Errorf("open compare file: %w", err)
+		return nil, compareFile, fmt.Errorf("open compare file: %w", err)
 	}
 
-	return workbook, nil
+	return workbook, compareFile, nil
 }
 
 func runHeaderComparisonRule(

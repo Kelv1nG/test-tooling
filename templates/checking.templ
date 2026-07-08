@@ -4,7 +4,7 @@ templ CheckingTab(data PageData) {
 	<section
 		x-cloak
 		x-show="activeTab === 'checking'"
-		x-data={ checkingTabStateExpression(data.CheckReferenceDate, data.CheckCount, data.CheckPage) }
+		x-data={ checkingTabStateExpression(data.CheckReferenceDate, data.CheckCount, data.CheckPage, len(data.CheckSummaryRows) > 0 && !data.CheckRunRunning) }
 		data-tab-panel="checking"
 		data-check-pagination-root
 		class="rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8"
@@ -67,8 +67,8 @@ templ CheckingTab(data PageData) {
 					<button type="submit" formaction="/verify-checks" hx-post="/verify-checks" disabled?={ data.CheckRunRunning } class="inline-flex items-center justify-center rounded-2xl bg-pine px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60">Run verification</button>
 					<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Working...</div>
 				</div>
-				@CheckPaginationControls()
-				<div class="space-y-3" data-check-editor>
+				@CheckViewControls(data)
+				<div x-show="checkView === 'checks'" class="space-y-3" data-check-editor>
 					for _, row := range data.CheckRows {
 						@CheckConfigPanel(row, data.CheckHasIssues)
 					}
@@ -79,8 +79,11 @@ templ CheckingTab(data PageData) {
 						}, false)
 					</template>
 				</div>
-				<div class="flex justify-center pt-2">
+				<div x-show="checkView === 'checks'" class="flex justify-center pt-2">
 					<button type="button" onclick="window.addCheckConfigRow(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add row</button>
+				</div>
+				<div x-show="checkView === 'summary'">
+					@CheckRunSummaryTable(data)
 				</div>
 			</form>
 		} else {
@@ -90,6 +93,85 @@ templ CheckingTab(data PageData) {
 			</div>
 		}
 	</section>
+}
+
+templ CheckViewControls(data PageData) {
+	<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+		<div class="inline-flex rounded-2xl bg-white p-1 ring-1 ring-slate-200">
+			<button type="button" x-on:click="checkView = 'checks'" :class="checkView === 'checks' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-sm font-semibold transition">Configured checks</button>
+			<button type="button" x-on:click="checkView = 'summary'" :class="checkView === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-sm font-semibold transition">Summary</button>
+		</div>
+		<div x-show="checkView === 'checks'" class="flex-1">
+			@CheckPaginationControls()
+		</div>
+		<div x-show="checkView === 'summary'" class="flex flex-wrap items-center gap-2">
+			<div class="inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200">
+				<button type="button" x-on:click="checkSummaryFilter = 'all'" :class="checkSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">All</button>
+				<button type="button" x-on:click="checkSummaryFilter = 'issues'" :class="checkSummaryFilter === 'issues' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Issues</button>
+				<button type="button" x-on:click="checkSummaryFilter = 'changed'" :class="checkSummaryFilter === 'changed' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Changed</button>
+				<button type="button" x-on:click="checkSummaryFilter = 'error'" :class="checkSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Errors</button>
+				<button type="button" x-on:click="checkSummaryFilter = 'matched'" :class="checkSummaryFilter === 'matched' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Matched</button>
+				<button type="button" x-on:click="checkSummaryFilter = 'skipped'" :class="checkSummaryFilter === 'skipped' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Skipped</button>
+			</div>
+			<p class="text-sm font-medium text-slate-600">{ len(data.CheckSummaryRows) } row(s)</p>
+		</div>
+	</div>
+}
+
+templ CheckRunSummaryTable(data PageData) {
+	if len(data.CheckSummaryRows) == 0 {
+		<div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No verification summary yet.</div>
+	} else {
+		<div class="overflow-x-auto rounded-2xl border border-slate-200">
+			<table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+				<thead class="bg-slate-50">
+					<tr class="text-xs font-semibold uppercase text-slate-500">
+						<th class="px-3 py-2">Check</th>
+						<th class="px-3 py-2">Rule</th>
+						<th class="px-3 py-2">Type</th>
+						<th class="px-3 py-2">Status</th>
+						<th class="px-3 py-2">Current file</th>
+						<th class="px-3 py-2">Compare file</th>
+						<th class="px-3 py-2">Sheet</th>
+						<th class="px-3 py-2">Detail</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-100">
+					for _, row := range data.CheckSummaryRows {
+						<tr x-show={ summaryVisibilityExpression(row.Status, "checkSummaryFilter") } class="align-top">
+							<td class="whitespace-nowrap px-3 py-2 font-mono text-xs font-semibold text-slate-700">
+								if row.CheckID != "" {
+									{ row.CheckID }
+								} else {
+									{ row.CheckIndex }
+								}
+							</td>
+							<td class="whitespace-nowrap px-3 py-2">
+								<div class="font-mono text-xs font-semibold text-slate-700">
+									if row.RuleID != "" {
+										{ row.RuleID }
+									} else {
+										-
+									}
+								</div>
+								if row.RuleName != "" {
+									<div class="mt-1 max-w-[12rem] truncate text-xs text-slate-500" title={ row.RuleName }>{ row.RuleName }</div>
+								}
+							</td>
+							<td class="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{ row.RuleType }</td>
+							<td class="whitespace-nowrap px-3 py-2">
+								<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
+							</td>
+							<td class="px-3 py-2">@FilePathLink(row.CurrentFile)</td>
+							<td class="px-3 py-2">@FilePathLink(row.CompareFile)</td>
+							<td class="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{ row.Sheet }</td>
+							<td class="min-w-[16rem] px-3 py-2 text-slate-700">{ row.Detail }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
 }
 
 templ CheckProgressPanel(data PageData) {

@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	addr := flag.String("addr", ":8081", "HTTP listen address")
+	addr := flag.String("addr", ":8082", "HTTP listen address")
 	definitionsPath := flag.String("definitions", "table-definitions.yaml", "path to table definitions YAML")
 	workbookPath := flag.String("workbook", "configuration-example.xlsx", "path to workbook")
 	flag.Parse()

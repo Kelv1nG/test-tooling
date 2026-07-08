@@ -60,3 +60,43 @@ func TestCheckConfigStartsExpanded(t *testing.T) {
 		})
 	}
 }
+
+func TestFileLinkHref(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want string
+	}{
+		{
+			name: "unc network path",
+			path: `\\server\share\monthly report.xlsx`,
+			want: "file://server/share/monthly%20report.xlsx",
+		},
+		{
+			name: "windows drive path",
+			path: `Z:\reports\file.xlsx`,
+			want: "file:///Z:/reports/file.xlsx",
+		},
+		{
+			name: "posix absolute path",
+			path: "/mnt/share/monthly report.xlsx",
+			want: "file:///mnt/share/monthly%20report.xlsx",
+		},
+		{
+			name: "relative path is not linked",
+			path: "sample/report.xlsx",
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := fileLinkHref(tt.path); got != tt.want {
+				t.Fatalf("fileLinkHref(%q) = %q, want %q", tt.path, got, tt.want)
+			}
+			if got := string(safeFileLinkHref(tt.path)); got != tt.want {
+				t.Fatalf("safeFileLinkHref(%q) = %q, want %q", tt.path, got, tt.want)
+			}
+		})
+	}
+}

@@ -89,6 +89,12 @@ func TestTransferRunnerRunCopiesMappingsAndPreservesOrder(t *testing.T) {
 		if result.Status != "Created" {
 			t.Fatalf("result %d status = %q, want Created", index, result.Status)
 		}
+		if result.ResolvedSrc != mappings[index].Src {
+			t.Fatalf("result %d ResolvedSrc = %q, want %q", index, result.ResolvedSrc, mappings[index].Src)
+		}
+		if result.ResolvedDest != mappings[index].Dest {
+			t.Fatalf("result %d ResolvedDest = %q, want %q", index, result.ResolvedDest, mappings[index].Dest)
+		}
 
 		contents, err := os.ReadFile(mappings[index].Dest)
 		if err != nil {
@@ -98,5 +104,16 @@ func TestTransferRunnerRunCopiesMappingsAndPreservesOrder(t *testing.T) {
 		if string(contents) != want {
 			t.Fatalf("destination contents = %q, want %q", string(contents), want)
 		}
+	}
+
+	summaryRows := buildTransferSummaryRows(results)
+	if len(summaryRows) != len(results) {
+		t.Fatalf("got %d summary rows, want %d", len(summaryRows), len(results))
+	}
+	if summaryRows[0].Source != mappings[0].Src {
+		t.Fatalf("summary source = %q, want %q", summaryRows[0].Source, mappings[0].Src)
+	}
+	if summaryRows[0].Destination != mappings[0].Dest {
+		t.Fatalf("summary destination = %q, want %q", summaryRows[0].Destination, mappings[0].Dest)
 	}
 }

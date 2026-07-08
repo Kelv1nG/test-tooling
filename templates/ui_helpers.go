@@ -3,6 +3,9 @@ package templates
 import (
 	"fmt"
 	"net/url"
+	"strings"
+
+	"github.com/a-h/templ"
 )
 
 const checkRowsPerPage = 10
@@ -14,11 +17,18 @@ func appShellExpression(activeTab string) string {
 func strategyStateExpression(
 	strategy string,
 	referenceDate string,
+	summaryHasRun bool,
 ) string {
+	tableView := "configured"
+	if summaryHasRun {
+		tableView = "summary"
+	}
+
 	return fmt.Sprintf(
-		`{ strategy: %q, referenceDate: %q }`,
+		`{ strategy: %q, referenceDate: %q, transferTableView: %q, transferSummaryFilter: "all" }`,
 		strategy,
 		referenceDate,
+		tableView,
 	)
 }
 
@@ -34,14 +44,21 @@ func checkingTabStateExpression(
 	referenceDate string,
 	checkCount int,
 	checkPage int,
+	showSummary bool,
 ) string {
 	if checkPage < 1 {
 		checkPage = 1
+	}
+	checkView := "checks"
+	if showSummary {
+		checkView = "summary"
 	}
 
 	return fmt.Sprintf(
 		`{
 			referenceDate: %q,
+			checkView: %q,
+			checkSummaryFilter: "all",
 			checkPage: %d,
 			checkPageSize: %d,
 			checkCount: %d,
@@ -59,6 +76,7 @@ func checkingTabStateExpression(
 			}
 		}`,
 		referenceDate,
+		checkView,
 		checkPage,
 		checkRowsPerPage,
 		checkCount,
@@ -191,4 +209,44 @@ func checkRunProgressStyle(
 	total int,
 ) string {
 	return fmt.Sprintf("width: %d%%", checkRunProgressPercent(completed, total))
+}
+
+func fileLinkHref(path string) string {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return ""
+	}
+
+	normalized := strings.ReplaceAll(path, `\`, "/")
+	if strings.HasPrefix(normalized, "//") {
+		return "file://" + escapeFileURLPath(strings.TrimLeft(normalized, "/"))
+	}
+	if len(normalized) >= 3 && normalized[1] == ':' && normalized[2] == '/' {
+		return "file:///" + escapeFileURLPath(normalized)
+	}
+	if strings.HasPrefix(normalized, "/") {
+		return "file://" + escapeFileURLPath(normalized)
+	}
+
+	return ""
+}
+
+func safeFileLinkHref(path string) templ.SafeURL {
+	return templ.SafeURL(fileLinkHref(path))
+}
+
+func summaryVisibilityExpression(
+	status string,
+	filterModel string,
+) string {
+	return fmt.Sprintf("window.summaryStatusVisible(%q, %s)", status, filterModel)
+}
+
+func escapeFileURLPath(path string) string {
+	parts := strings.Split(path, "/")
+	for index, part := range parts {
+		parts[index] = url.PathEscape(part)
+	}
+
+	return strings.Join(parts, "/")
 }

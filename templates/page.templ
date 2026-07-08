@@ -165,6 +165,21 @@ templ PageScripts() {
 	    return rowNumber > start && rowNumber <= start + size;
 	  };
 
+	  window.summaryStatusVisible = (status, filter) => {
+	    const normalizedStatus = String(status || "").toLowerCase().replace(/\s+/g, "-");
+	    const normalizedFilter = String(filter || "all").toLowerCase();
+	    if (normalizedFilter === "all") {
+	      return true;
+	    }
+	    if (normalizedFilter === "issues") {
+	      return normalizedStatus === "changed" || normalizedStatus === "not-found" || normalizedStatus === "error";
+	    }
+	    if (normalizedFilter === "skipped") {
+	      return normalizedStatus === "skipped" || normalizedStatus === "disabled" || normalizedStatus === "not-configured";
+	    }
+	    return normalizedStatus === normalizedFilter;
+	  };
+
 	  window.refreshCheckPagination = (editor, options = {}) => {
 	    const root = editor?.closest("[data-check-pagination-root]");
 	    if (!root || !window.Alpine) {

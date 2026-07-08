@@ -36,6 +36,7 @@ func newVerificationJob(
 	base.CheckRows = cloneCheckRows(rows)
 	base.CheckCount = len(rows)
 	base.CheckSummary = templates.CheckSummaryView{HasRun: true}
+	base.CheckSummaryRows = buildCheckSummaryRows(rows)
 	base.CheckRunID = id
 	base.CheckRunCompleted = 0
 	base.CheckRunTotal = len(rows)
@@ -141,6 +142,7 @@ func (j *verificationJob) pageData() templates.PageData {
 	data.CheckCount = len(j.rows)
 	data.CheckSummary = j.summary
 	data.CheckSummary.HasRun = true
+	data.CheckSummaryRows = buildCheckSummaryRows(data.CheckRows)
 	data.CheckRunID = j.id
 	data.CheckRunCompleted = j.completed
 	data.CheckRunTotal = j.total

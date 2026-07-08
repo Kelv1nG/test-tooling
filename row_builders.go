@@ -34,7 +34,9 @@ func buildTransferRows(
 		}
 
 		row.SrcExists = fileExistsOrFalse(resolved.Src)
+		row.ResolvedSrc = resolved.Src
 		row.DestExists = fileExistsOrFalse(resolved.Dest)
+		row.ResolvedDest = resolved.Dest
 		rows = append(rows, row)
 	}
 
@@ -63,9 +65,83 @@ func applyTransferResultsToRows(
 		rows[index].Status = result.Status
 		rows[index].Badge = result.Badge
 		rows[index].Detail = result.Detail
+		rows[index].ResolvedSrc = result.ResolvedSrc
+		rows[index].ResolvedDest = result.ResolvedDest
 	}
 
 	return rows
+}
+
+func buildTransferSummaryRows(
+	results []templates.TransferResultView,
+) []templates.TransferSummaryRowView {
+	rows := make([]templates.TransferSummaryRowView, 0, len(results))
+
+	for _, result := range results {
+		source := result.ResolvedSrc
+		if source == "" {
+			source = result.Src
+		}
+		destination := result.ResolvedDest
+		if destination == "" {
+			destination = result.Dest
+		}
+
+		rows = append(rows, templates.TransferSummaryRowView{
+			Index:       result.Index,
+			Status:      result.Status,
+			Badge:       result.Badge,
+			Source:      source,
+			Destination: destination,
+			Detail:      result.Detail,
+		})
+	}
+
+	return rows
+}
+
+func buildCheckSummaryRows(
+	rows []templates.CheckRowView,
+) []templates.CheckSummaryRowView {
+	summaryRows := []templates.CheckSummaryRowView{}
+
+	for _, row := range rows {
+		if len(row.Rules) == 0 {
+			summaryRows = append(summaryRows, templates.CheckSummaryRowView{
+				CheckIndex:  row.Index,
+				CheckID:     row.ID,
+				Status:      row.Status,
+				Badge:       row.Badge,
+				CurrentFile: row.ResolvedFile,
+				CompareFile: row.ResolvedCompareFile,
+				Detail:      row.Detail,
+			})
+			continue
+		}
+
+		for _, rule := range row.Rules {
+			compareFile := ""
+			if rule.Type == string(config.VerificationRuleTypeHeaderCompare) {
+				compareFile = row.ResolvedCompareFile
+			}
+
+			summaryRows = append(summaryRows, templates.CheckSummaryRowView{
+				CheckIndex:  row.Index,
+				CheckID:     row.ID,
+				RuleID:      rule.ID,
+				RuleName:    rule.Name,
+				RuleType:    rule.Type,
+				Status:      rule.Status,
+				Badge:       rule.Badge,
+				CurrentFile: row.ResolvedFile,
+				CompareFile: compareFile,
+				Sheet:       rule.Sheet,
+				Detail:      rule.Detail,
+			})
+		}
+	}
+
+	return summaryRows
 }
 
 func buildCheckRows(
@@ -280,6 +356,7 @@ func applyCheckPathStatus(
 		row.Detail = fmt.Sprintf("file pattern: %v", err)
 		return
 	}
+	row.ResolvedFile = currentFile
 	row.FileExists = fileExistsOrFalse(currentFile)
 
 	if !checkRowRequiresCompareOffset(*row) || row.CompareOffsetMonths == 0 {
@@ -299,5 +376,6 @@ func applyCheckPathStatus(
 		row.Detail = fmt.Sprintf("compare file pattern: %v", err)
 		return
 	}
+	row.ResolvedCompareFile = compareFile
 	row.CompareExists = fileExistsOrFalse(compareFile)
 }

@@ -104,6 +104,8 @@ func (r transferRunner) runOne(
 	if err != nil {
 		return transferErrorResult(entry, err)
 	}
+	entry.ResolvedSrc = resolved.Src
+	entry.ResolvedDest = resolved.Dest
 
 	outcome, err := copyFile(
 		resolved.Src,
