@@ -25,6 +25,10 @@ type PageData struct {
 	CheckMessage       string
 	CheckHasIssues     bool
 	CheckSummary       CheckSummaryView
+	CheckRunID         string
+	CheckRunRunning    bool
+	CheckRunCompleted  int
+	CheckRunTotal      int
 }
 
 type TransferRowView struct {

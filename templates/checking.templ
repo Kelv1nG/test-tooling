@@ -14,22 +14,6 @@ templ CheckingTab(data PageData) {
 				<h2 class="text-xl font-semibold text-slate-900">Verification</h2>
 				<p class="mt-1 text-sm text-slate-600">Each file-check config can own multiple verification rules. Header rules compare the current reporting file against the month-offset file; exact-text and anchor-scan rules search only the current reporting file.</p>
 			</div>
-			<div class="mb-6 grid gap-4 sm:grid-cols-2">
-				<div class="rounded-[1.5rem] bg-amber-50 px-5 py-4">
-					<p class="text-3xl font-semibold text-slate-900">{ data.CheckCount }</p>
-					<p class="mt-1 text-sm text-slate-600">configured file checks</p>
-				</div>
-				<div class="rounded-[1.5rem] bg-teal-50 px-5 py-4">
-					<p class="text-3xl font-semibold text-slate-900">
-						if data.CheckSummary.HasRun {
-							{ data.CheckSummary.Attempted }
-						} else {
-							0
-						}
-					</p>
-					<p class="mt-1 text-sm text-slate-600">rules verified this run</p>
-				</div>
-			</div>
 			<form
 				method="post"
 				action="/save-checks"
@@ -75,9 +59,12 @@ templ CheckingTab(data PageData) {
 				if data.CheckMessage != "" {
 					<div class={ checkMessageClasses(data.CheckHasIssues) }>{ data.CheckMessage }</div>
 				}
+				if data.CheckRunID != "" {
+					@CheckProgressPanel(data)
+				}
 				<div class="flex flex-wrap items-center gap-3">
 					<button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-ember px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700">Save workbook changes</button>
-					<button type="submit" formaction="/verify-checks" hx-post="/verify-checks" class="inline-flex items-center justify-center rounded-2xl bg-pine px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">Run verification</button>
+					<button type="submit" formaction="/verify-checks" hx-post="/verify-checks" disabled?={ data.CheckRunRunning } class="inline-flex items-center justify-center rounded-2xl bg-pine px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60">Run verification</button>
 					<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Working...</div>
 				</div>
 				@CheckPaginationControls()
@@ -103,6 +90,46 @@ templ CheckingTab(data PageData) {
 			</div>
 		}
 	</section>
+}
+
+templ CheckProgressPanel(data PageData) {
+	if data.CheckRunRunning {
+		<div
+			id="check-run-progress"
+			hx-get={ checkRunStatusPath(data.CheckRunID) }
+			hx-trigger="load delay:1s"
+			hx-target="#app-shell"
+			hx-swap="outerHTML"
+			class="mb-4 rounded-[1.5rem] border border-teal-200 bg-teal-50 px-4 py-4"
+		>
+			@CheckProgressPanelContent(data)
+		</div>
+	} else {
+		<div id="check-run-progress" class="mb-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4">
+			@CheckProgressPanelContent(data)
+		</div>
+	}
+}
+
+templ CheckProgressPanelContent(data PageData) {
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<div>
+			<p class="text-sm font-semibold text-slate-900">Verification progress</p>
+			<p class="mt-1 text-sm text-slate-600">Completed { data.CheckRunCompleted } of { data.CheckRunTotal } file check(s).</p>
+		</div>
+		<span class="inline-flex min-w-[4rem] justify-center rounded-full bg-white px-3 py-1 text-sm font-semibold text-teal-700 ring-1 ring-teal-200">{ checkRunProgressPercent(data.CheckRunCompleted, data.CheckRunTotal) }%</span>
+	</div>
+	<div class="mt-3 h-2 overflow-hidden rounded-full bg-white ring-1 ring-teal-100">
+		<div class="h-full rounded-full bg-pine transition-all" style={ checkRunProgressStyle(data.CheckRunCompleted, data.CheckRunTotal) }></div>
+	</div>
+	if data.CheckSummary.HasRun {
+		<div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
+			<span>Matched { data.CheckSummary.Matched }</span>
+			<span>Changed { data.CheckSummary.Changed }</span>
+			<span>Errors { data.CheckSummary.Errors }</span>
+			<span>Skipped { data.CheckSummary.Skipped }</span>
+		</div>
+	}
 }
 
 templ CheckPaginationControls() {

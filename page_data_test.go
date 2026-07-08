@@ -2,6 +2,27 @@ package main
 
 import "testing"
 
+func TestTabPath(t *testing.T) {
+	tests := []struct {
+		tab  string
+		want string
+	}{
+		{tab: tabConfiguration, want: "/configuration"},
+		{tab: tabFileTransfer, want: "/file-transfer"},
+		{tab: tabChecking, want: "/checking"},
+		{tab: "", want: "/configuration"},
+		{tab: "unknown", want: "/configuration"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.tab, func(t *testing.T) {
+			if got := tabPath(tt.tab); got != tt.want {
+				t.Fatalf("tabPath(%q) = %q, want %q", tt.tab, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNormalizeCheckPage(t *testing.T) {
 	tests := []struct {
 		name  string

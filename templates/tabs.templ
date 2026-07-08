@@ -2,8 +2,13 @@ package templates
 
 templ TabButtons() {
 	<div class="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Workflow tabs">
-		<button
-			type="button"
+		<a
+			href="/configuration"
+			hx-get="/configuration"
+			hx-target="#app-shell"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			role="tab"
 			@click="activeTab = 'configuration'"
 			:class="activeTab === 'configuration'
       ? 'rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition'
@@ -11,9 +16,14 @@ templ TabButtons() {
 			:aria-selected="activeTab === 'configuration'"
 		>
 			Configuration
-		</button>
-		<button
-			type="button"
+		</a>
+		<a
+			href="/file-transfer"
+			hx-get="/file-transfer"
+			hx-target="#app-shell"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			role="tab"
 			@click="activeTab = 'file-transfer'"
 			:class="activeTab === 'file-transfer'
       ? 'rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition'
@@ -21,9 +31,14 @@ templ TabButtons() {
 			:aria-selected="activeTab === 'file-transfer'"
 		>
 			File Transfer
-		</button>
-		<button
-			type="button"
+		</a>
+		<a
+			href="/checking"
+			hx-get="/checking"
+			hx-target="#app-shell"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			role="tab"
 			@click="activeTab = 'checking'"
 			:class="activeTab === 'checking'
       ? 'rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition'
@@ -31,6 +46,6 @@ templ TabButtons() {
 			:aria-selected="activeTab === 'checking'"
 		>
 			Checking
-		</button>
+		</a>
 	</div>
 }

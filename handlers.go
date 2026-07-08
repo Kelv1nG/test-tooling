@@ -10,6 +10,48 @@ func (a *application) handleIndex(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
+	if request.URL.Path != "/" {
+		http.NotFound(writer, request)
+		return
+	}
+	if !allowMethod(writer, request, http.MethodGet) {
+		return
+	}
+
+	http.Redirect(
+		writer,
+		request,
+		tabPath(normalizeTab(request.URL.Query().Get("tab"))),
+		http.StatusSeeOther,
+	)
+}
+
+func (a *application) handleConfigurationPage(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	a.handleTabPage(writer, request, tabConfiguration)
+}
+
+func (a *application) handleFileTransferPage(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	a.handleTabPage(writer, request, tabFileTransfer)
+}
+
+func (a *application) handleCheckingPage(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	a.handleTabPage(writer, request, tabChecking)
+}
+
+func (a *application) handleTabPage(
+	writer http.ResponseWriter,
+	request *http.Request,
+	activeTab string,
+) {
 	if !allowMethod(writer, request, http.MethodGet) {
 		return
 	}
@@ -18,7 +60,7 @@ func (a *application) handleIndex(
 		a.defaultDefinitionsPath,
 		a.defaultWorkbookPath,
 	)
-	data.ActiveTab = normalizeTab(request.URL.Query().Get("tab"))
+	data.ActiveTab = normalizeTab(activeTab)
 
 	// Default files are optional at startup; preload workbook-backed data only
 	// when both paths are present so the first page can still render cleanly.
@@ -318,18 +360,45 @@ func (a *application) handleVerifyChecks(
 		return
 	}
 
-	data.CheckRows, data.CheckSummary = runCheckVerification(data.CheckRows, referenceDate)
-	data.CheckHasIssues = data.CheckSummary.Changed > 0 || data.CheckSummary.Errors > 0
-	data.CheckMessage = fmt.Sprintf(
-		"Verification checked %d rule(s): matched %d, changed %d, errors %d, skipped %d.",
-		data.CheckSummary.Attempted,
-		data.CheckSummary.Matched,
-		data.CheckSummary.Changed,
-		data.CheckSummary.Errors,
-		data.CheckSummary.Skipped,
-	)
+	job := a.startVerificationJob(data, rows, referenceDate)
+	a.renderResponse(writer, request, job.pageData(), http.StatusOK)
+}
 
-	a.renderResponse(writer, request, data, http.StatusOK)
+func (a *application) handleVerifyChecksStatus(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	if !allowMethod(writer, request, http.MethodGet) {
+		return
+	}
+
+	jobID := request.URL.Query().Get("id")
+	if jobID == "" {
+		data := a.newPageData(
+			a.defaultDefinitionsPath,
+			a.defaultWorkbookPath,
+		)
+		data.ActiveTab = tabChecking
+		data.CheckHasIssues = true
+		data.CheckMessage = "Verification run is missing a job ID."
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	job, ok := a.verificationJob(jobID)
+	if !ok {
+		data := a.newPageData(
+			a.defaultDefinitionsPath,
+			a.defaultWorkbookPath,
+		)
+		data.ActiveTab = tabChecking
+		data.CheckHasIssues = true
+		data.CheckMessage = "Verification run was not found. Start verification again."
+		a.renderResponse(writer, request, data, http.StatusNotFound)
+		return
+	}
+
+	a.renderResponse(writer, request, job.pageData(), http.StatusOK)
 }
 
 func (a *application) handleHealth(

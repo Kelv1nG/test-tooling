@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -15,17 +16,93 @@ import (
 	"tooling/templates"
 )
 
+const maxConcurrentCheckVerifications = 5
+
 func runCheckVerification(
 	rows []templates.CheckRowView,
 	referenceDate time.Time,
 ) ([]templates.CheckRowView, templates.CheckSummaryView) {
+	return runCheckVerificationWithProgress(rows, referenceDate, nil)
+}
+
+type checkVerificationProgress struct {
+	Index     int
+	Row       templates.CheckRowView
+	Summary   templates.CheckSummaryView
+	Completed int
+	Total     int
+}
+
+func runCheckVerificationWithProgress(
+	rows []templates.CheckRowView,
+	referenceDate time.Time,
+	progress func(checkVerificationProgress),
+) ([]templates.CheckRowView, templates.CheckSummaryView) {
 	summary := templates.CheckSummaryView{HasRun: true}
+	results := make([]templates.CheckRowView, len(rows))
+	rowResults := make(chan checkVerificationRowResult, len(rows))
+	sem := make(chan struct{}, maxConcurrentCheckVerifications)
+	var wg sync.WaitGroup
 
 	for index := range rows {
-		runCheckConfigVerification(&rows[index], referenceDate, &summary)
+		wg.Add(1)
+		go func(index int, row templates.CheckRowView) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() {
+				<-sem
+			}()
+
+			rowSummary := templates.CheckSummaryView{}
+			runCheckConfigVerification(&row, referenceDate, &rowSummary)
+			rowResults <- checkVerificationRowResult{
+				index:   index,
+				row:     row,
+				summary: rowSummary,
+			}
+		}(index, rows[index])
 	}
 
-	return rows, summary
+	go func() {
+		wg.Wait()
+		close(rowResults)
+	}()
+
+	completed := 0
+	for result := range rowResults {
+		results[result.index] = result.row
+		addCheckSummary(&summary, result.summary)
+		completed++
+
+		if progress != nil {
+			progress(checkVerificationProgress{
+				Index:     result.index,
+				Row:       result.row,
+				Summary:   summary,
+				Completed: completed,
+				Total:     len(rows),
+			})
+		}
+	}
+
+	return results, summary
+}
+
+type checkVerificationRowResult struct {
+	index   int
+	row     templates.CheckRowView
+	summary templates.CheckSummaryView
+}
+
+func addCheckSummary(
+	target *templates.CheckSummaryView,
+	addition templates.CheckSummaryView,
+) {
+	target.Attempted += addition.Attempted
+	target.Matched += addition.Matched
+	target.Changed += addition.Changed
+	target.Errors += addition.Errors
+	target.Skipped += addition.Skipped
 }
 
 func runCheckConfigVerification(

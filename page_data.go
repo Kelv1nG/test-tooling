@@ -182,6 +182,17 @@ func normalizeTab(value string) string {
 	}
 }
 
+func tabPath(tab string) string {
+	switch normalizeTab(tab) {
+	case tabFileTransfer:
+		return "/file-transfer"
+	case tabChecking:
+		return "/checking"
+	default:
+		return "/configuration"
+	}
+}
+
 func normalizeCheckPage(value string) int {
 	page, err := strconv.Atoi(strings.TrimSpace(value))
 	if err != nil || page < 1 {

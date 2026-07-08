@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"tooling/config"
 )
 
 func TestParseTransferMode(t *testing.T) {
@@ -37,5 +42,61 @@ func TestNewTransferRunnerUsesSelectedConflictStrategy(t *testing.T) {
 	runner = newTransferRunner(transferModeOverwrite, referenceDate)
 	if runner.conflictStrategy != conflictStrategyOverwrite {
 		t.Fatalf("expected overwrite conflict strategy, got %v", runner.conflictStrategy)
+	}
+}
+
+func TestTransferRunnerRunCopiesMappingsAndPreservesOrder(t *testing.T) {
+	tempDir := t.TempDir()
+	mappings := make([]config.FileTransferMap, 8)
+
+	for index := range mappings {
+		src := filepath.Join(tempDir, fmt.Sprintf("src-%02d.txt", index+1))
+		dest := filepath.Join(tempDir, "out", fmt.Sprintf("dest-%02d.txt", index+1))
+		contents := fmt.Sprintf("file %02d", index+1)
+		if err := os.WriteFile(src, []byte(contents), 0o644); err != nil {
+			t.Fatalf("WriteFile source returned error: %v", err)
+		}
+
+		mappings[index] = config.FileTransferMap{
+			Src:  src,
+			Dest: dest,
+		}
+	}
+
+	runner := newTransferRunner(
+		transferModeOverwrite,
+		time.Date(2026, time.June, 29, 0, 0, 0, 0, time.UTC),
+	)
+	results, summary := runner.run(mappings)
+
+	if summary.Attempted != len(mappings) {
+		t.Fatalf("summary.Attempted = %d, want %d", summary.Attempted, len(mappings))
+	}
+	if summary.Created != len(mappings) {
+		t.Fatalf("summary.Created = %d, want %d", summary.Created, len(mappings))
+	}
+	if summary.Errors != 0 {
+		t.Fatalf("summary.Errors = %d, want 0", summary.Errors)
+	}
+	if len(results) != len(mappings) {
+		t.Fatalf("got %d results, want %d", len(results), len(mappings))
+	}
+
+	for index, result := range results {
+		if result.Index != index+1 {
+			t.Fatalf("result %d has Index %d, want %d", index, result.Index, index+1)
+		}
+		if result.Status != "Created" {
+			t.Fatalf("result %d status = %q, want Created", index, result.Status)
+		}
+
+		contents, err := os.ReadFile(mappings[index].Dest)
+		if err != nil {
+			t.Fatalf("ReadFile destination returned error: %v", err)
+		}
+		want := fmt.Sprintf("file %02d", index+1)
+		if string(contents) != want {
+			t.Fatalf("destination contents = %q, want %q", string(contents), want)
+		}
 	}
 }

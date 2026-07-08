@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"sync"
 	"tooling/templates"
 )
 
@@ -11,6 +12,8 @@ type application struct {
 	defaultWorkbookPath    string
 	listenAddr             string
 	logger                 *log.Logger
+	verificationJobsMu     sync.Mutex
+	verificationJobs       map[string]*verificationJob
 }
 
 func NewApplication(
@@ -24,17 +27,22 @@ func NewApplication(
 		defaultWorkbookPath:    workbookPath,
 		listenAddr:             listenAddr,
 		logger:                 logger,
+		verificationJobs:       map[string]*verificationJob{},
 	}
 }
 
 func (a *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", a.handleIndex)
+	mux.HandleFunc("/configuration", a.handleConfigurationPage)
+	mux.HandleFunc("/file-transfer", a.handleFileTransferPage)
+	mux.HandleFunc("/checking", a.handleCheckingPage)
 	mux.HandleFunc("/load", a.handleLoad)
 	mux.HandleFunc("/transfer", a.handleTransfer)
 	mux.HandleFunc("/save-transfer", a.handleSaveTransfer)
 	mux.HandleFunc("/save-checks", a.handleSaveChecks)
 	mux.HandleFunc("/verify-checks", a.handleVerifyChecks)
+	mux.HandleFunc("/verify-checks/status", a.handleVerifyChecksStatus)
 	mux.HandleFunc("/healthz", a.handleHealth)
 
 	return mux

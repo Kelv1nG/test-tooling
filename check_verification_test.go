@@ -118,6 +118,81 @@ func TestRunCheckVerificationExactMatchNotFound(t *testing.T) {
 	}
 }
 
+func TestRunCheckVerificationWithProgressReportsEachCompletedRow(t *testing.T) {
+	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
+	tempDir := t.TempDir()
+	matchingPath := filepath.Join(tempDir, "matching.xlsx")
+	changedPath := filepath.Join(tempDir, "changed.xlsx")
+	writeExactTextWorkbook(t, matchingPath, "expected")
+	writeExactTextWorkbook(t, changedPath, "different")
+
+	inputRows := []templates.CheckRowView{
+		{
+			Index: 1,
+			ID:    "CHK-001",
+			File:  matchingPath,
+			Rules: []templates.CheckRuleView{
+				{
+					Index:        1,
+					ID:           "R001",
+					CheckID:      "CHK-001",
+					Type:         "exact_text",
+					Enabled:      true,
+					Sheet:        "Report",
+					ExpectedText: "expected",
+				},
+			},
+		},
+		{
+			Index: 2,
+			ID:    "CHK-002",
+			File:  changedPath,
+			Rules: []templates.CheckRuleView{
+				{
+					Index:        1,
+					ID:           "R001",
+					CheckID:      "CHK-002",
+					Type:         "exact_text",
+					Enabled:      true,
+					Sheet:        "Report",
+					ExpectedText: "expected",
+				},
+			},
+		},
+	}
+	var progressEvents []checkVerificationProgress
+
+	rows, summary := runCheckVerificationWithProgress(
+		inputRows,
+		referenceDate,
+		func(progress checkVerificationProgress) {
+			progressEvents = append(progressEvents, progress)
+		},
+	)
+
+	if len(progressEvents) != len(inputRows) {
+		t.Fatalf("got %d progress events, want %d", len(progressEvents), len(inputRows))
+	}
+	if progressEvents[len(progressEvents)-1].Completed != len(inputRows) {
+		t.Fatalf("last completed count = %d, want %d", progressEvents[len(progressEvents)-1].Completed, len(inputRows))
+	}
+	if progressEvents[len(progressEvents)-1].Total != len(inputRows) {
+		t.Fatalf("last total = %d, want %d", progressEvents[len(progressEvents)-1].Total, len(inputRows))
+	}
+	if summary.Matched != 1 {
+		t.Fatalf("summary.Matched = %d, want 1", summary.Matched)
+	}
+	if summary.Changed != 1 {
+		t.Fatalf("summary.Changed = %d, want 1", summary.Changed)
+	}
+	if rows[0].ID != "CHK-001" || rows[0].Status != "Matched" {
+		t.Fatalf("first row = %+v, want CHK-001 matched", rows[0])
+	}
+	if rows[1].ID != "CHK-002" || rows[1].Status != "Changed" {
+		t.Fatalf("second row = %+v, want CHK-002 changed", rows[1])
+	}
+}
+
 func TestRunCheckVerificationRejectsAmbiguousWildcardFile(t *testing.T) {
 	referenceDate := time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC)
 	tempDir := t.TempDir()

@@ -1,6 +1,9 @@
 package templates
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 const checkRowsPerPage = 10
 
@@ -155,4 +158,37 @@ func checkMessageClasses(hasIssues bool) string {
 	}
 
 	return "mb-4 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800"
+}
+
+func checkRunStatusPath(id string) string {
+	return "/verify-checks/status?id=" + url.QueryEscape(id)
+}
+
+func checkRunProgressPercent(
+	completed int,
+	total int,
+) int {
+	if total <= 0 {
+		if completed > 0 {
+			return 100
+		}
+		return 0
+	}
+
+	percent := completed * 100 / total
+	if percent < 0 {
+		return 0
+	}
+	if percent > 100 {
+		return 100
+	}
+
+	return percent
+}
+
+func checkRunProgressStyle(
+	completed int,
+	total int,
+) string {
+	return fmt.Sprintf("width: %d%%", checkRunProgressPercent(completed, total))
 }
