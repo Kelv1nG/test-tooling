@@ -306,6 +306,7 @@ templ TransferRunSummaryTable(data PageData) {
 		<div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No transfer run yet.</div>
 	} else {
 		<div class="space-y-3">
+			@TransferSummaryPaginationControls()
 			<div class="overflow-x-auto rounded-2xl border border-slate-200">
 				<table data-resizable-table data-resizable-key="transfer-summary" class="min-w-[81rem] table-fixed divide-y divide-slate-200 text-left text-sm">
 					<colgroup>
@@ -339,7 +340,6 @@ templ TransferRunSummaryTable(data PageData) {
 					</tbody>
 				</table>
 			</div>
-			@TransferSummaryPaginationControls()
 		</div>
 	}
 }

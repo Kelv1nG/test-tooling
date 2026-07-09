@@ -13,8 +13,8 @@ templ FilePathLink(path string, reportsRoot string) {
 }
 
 templ SummaryResizableHeader(column string, label string, minWidth int) {
-	<th scope="col" data-resizable-header={ column } data-min-width={ summaryColumnMinWidth(minWidth) } class="relative whitespace-nowrap px-3 py-2 pr-5">
-		<span>{ label }</span>
+	<th scope="col" data-resizable-header={ column } data-min-width={ summaryColumnMinWidth(minWidth) } class="group relative select-none whitespace-nowrap border-r border-slate-200 px-3 py-2 pr-7 last:border-r-0">
+		<span class="pointer-events-none">{ label }</span>
 		<span
 			data-column-resizer
 			role="separator"
@@ -22,7 +22,9 @@ templ SummaryResizableHeader(column string, label string, minWidth int) {
 			aria-label={ resizeColumnLabel(label) }
 			title={ resizeColumnLabel(label) }
 			tabindex="0"
-			class="absolute right-0 top-0 z-10 h-full w-2 cursor-col-resize touch-none border-r-2 border-transparent transition hover:border-teal-400 focus:border-teal-500 focus:outline-none"
-		></span>
+			class="absolute -right-2 top-0 z-20 flex h-full w-4 cursor-col-resize touch-none items-center justify-center focus:outline-none"
+		>
+			<span aria-hidden="true" class="h-5 w-[3px] rounded-full bg-slate-300 shadow-sm transition group-hover:h-7 group-hover:bg-teal-500 group-focus-within:h-7 group-focus-within:bg-teal-600"></span>
+		</span>
 	</th>
 }

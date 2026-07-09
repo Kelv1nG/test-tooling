@@ -161,14 +161,14 @@ func SummaryResizableHeader(column string, label string, minWidth int) templ.Com
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" class=\"relative whitespace-nowrap px-3 py-2 pr-5\"><span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" class=\"group relative select-none whitespace-nowrap border-r border-slate-200 px-3 py-2 pr-7 last:border-r-0\"><span class=\"pointer-events-none\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/summary_tables.templ`, Line: 17, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/summary_tables.templ`, Line: 17, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -200,7 +200,7 @@ func SummaryResizableHeader(column string, label string, minWidth int) templ.Com
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" tabindex=\"0\" class=\"absolute right-0 top-0 z-10 h-full w-2 cursor-col-resize touch-none border-r-2 border-transparent transition hover:border-teal-400 focus:border-teal-500 focus:outline-none\"></span></th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" tabindex=\"0\" class=\"absolute -right-2 top-0 z-20 flex h-full w-4 cursor-col-resize touch-none items-center justify-center focus:outline-none\"><span aria-hidden=\"true\" class=\"h-5 w-[3px] rounded-full bg-slate-300 shadow-sm transition group-hover:h-7 group-hover:bg-teal-500 group-focus-within:h-7 group-focus-within:bg-teal-600\"></span></span></th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
