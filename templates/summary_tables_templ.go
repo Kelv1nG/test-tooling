@@ -200,7 +200,7 @@ func SummaryResizableHeader(column string, label string, minWidth int) templ.Com
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" tabindex=\"0\" class=\"absolute -right-2 top-0 z-20 flex h-full w-4 cursor-col-resize touch-none items-center justify-center focus:outline-none\"><span aria-hidden=\"true\" class=\"h-5 w-[3px] rounded-full bg-slate-300 shadow-sm transition group-hover:h-7 group-hover:bg-teal-500 group-focus-within:h-7 group-focus-within:bg-teal-600\"></span></span></th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" tabindex=\"0\" class=\"absolute right-0 top-0 z-20 flex h-full w-4 cursor-col-resize touch-none items-center justify-center focus:outline-none\"><span aria-hidden=\"true\" class=\"h-5 w-[3px] rounded-full bg-slate-300 shadow-sm transition group-hover:h-7 group-hover:bg-teal-500 group-focus-within:h-7 group-focus-within:bg-teal-600\"></span></span></th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

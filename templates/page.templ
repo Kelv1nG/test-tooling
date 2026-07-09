@@ -226,6 +226,28 @@ templ PageScripts() {
 	    });
 	  };
 
+	  window.summaryColumnWidth = (col) => {
+	    if (!col) {
+	      return 0;
+	    }
+
+	    const styledWidth = Number.parseFloat(col.style.width || "");
+	    if (Number.isFinite(styledWidth) && styledWidth > 0) {
+	      return styledWidth;
+	    }
+
+	    return col.getBoundingClientRect().width || 0;
+	  };
+
+	  window.refreshSummaryTableWidth = (table) => {
+	    const columns = Array.from(table.querySelectorAll("[data-resizable-column]"));
+	    const width = columns.reduce((total, col) => total + window.summaryColumnWidth(col), 0);
+	    if (width > 0) {
+	      table.style.width = `${width}px`;
+	      table.style.minWidth = `${width}px`;
+	    }
+	  };
+
 	  window.setSummaryColumnWidth = (table, column, width, minWidth) => {
 	    const col = window.summaryColumnFor(table, column);
 	    if (!col) {
@@ -234,6 +256,7 @@ templ PageScripts() {
 
 	    const nextWidth = Math.max(Number(minWidth || 64), Number(width || 0));
 	    col.style.width = `${nextWidth}px`;
+	    window.refreshSummaryTableWidth(table);
 
 	    const widths = window.readSummaryColumnWidths(table);
 	    widths[column] = nextWidth;
@@ -251,6 +274,7 @@ templ PageScripts() {
 	      Object.entries(savedWidths).forEach(([column, width]) => {
 	        window.setSummaryColumnWidth(table, column, width, 1);
 	      });
+	      window.refreshSummaryTableWidth(table);
 
 	      table.querySelectorAll("[data-column-resizer]").forEach((handle) => {
 	        const header = handle.closest("[data-resizable-header]");
@@ -262,7 +286,32 @@ templ PageScripts() {
 	        const minWidth = Number(header.dataset.minWidth || 64);
 	        const currentWidth = () => {
 	          const col = window.summaryColumnFor(table, column);
-	          return col?.getBoundingClientRect().width || header.getBoundingClientRect().width || minWidth;
+	          return window.summaryColumnWidth(col) || header.getBoundingClientRect().width || minWidth;
+	        };
+
+	        const startResize = (startX, moveName, stopNames, clientXFromEvent) => {
+	          const startWidth = currentWidth();
+	          const previousCursor = document.body.style.cursor;
+	          const previousUserSelect = document.body.style.userSelect;
+	          document.body.style.cursor = "col-resize";
+	          document.body.style.userSelect = "none";
+
+	          const move = (moveEvent) => {
+	            const clientX = clientXFromEvent(moveEvent);
+	            if (clientX == null) {
+	              return;
+	            }
+	            window.setSummaryColumnWidth(table, column, startWidth + clientX - startX, minWidth);
+	          };
+	          const stop = () => {
+	            document.removeEventListener(moveName, move);
+	            stopNames.forEach((name) => document.removeEventListener(name, stop));
+	            document.body.style.cursor = previousCursor;
+	            document.body.style.userSelect = previousUserSelect;
+	          };
+
+	          document.addEventListener(moveName, move);
+	          stopNames.forEach((name) => document.addEventListener(name, stop));
 	        };
 
 	        handle.addEventListener("keydown", (event) => {
@@ -284,27 +333,40 @@ templ PageScripts() {
 	          event.preventDefault();
 	          handle.setPointerCapture?.(event.pointerId);
 
-	          const startX = event.clientX;
-	          const startWidth = currentWidth();
-	          const previousCursor = document.body.style.cursor;
-	          const previousUserSelect = document.body.style.userSelect;
-	          document.body.style.cursor = "col-resize";
-	          document.body.style.userSelect = "none";
+	          startResize(
+	            event.clientX,
+	            "pointermove",
+	            ["pointerup", "pointercancel"],
+	            (moveEvent) => moveEvent.clientX
+	          );
+	        });
 
-	          const move = (moveEvent) => {
-	            window.setSummaryColumnWidth(table, column, startWidth + moveEvent.clientX - startX, minWidth);
-	          };
-	          const stop = () => {
-	            document.removeEventListener("pointermove", move);
-	            document.removeEventListener("pointerup", stop);
-	            document.removeEventListener("pointercancel", stop);
-	            document.body.style.cursor = previousCursor;
-	            document.body.style.userSelect = previousUserSelect;
-	          };
+	        handle.addEventListener("mousedown", (event) => {
+	          if (window.PointerEvent || event.button !== 0) {
+	            return;
+	          }
 
-	          document.addEventListener("pointermove", move);
-	          document.addEventListener("pointerup", stop);
-	          document.addEventListener("pointercancel", stop);
+	          event.preventDefault();
+	          startResize(
+	            event.clientX,
+	            "mousemove",
+	            ["mouseup"],
+	            (moveEvent) => moveEvent.clientX
+	          );
+	        });
+
+	        handle.addEventListener("touchstart", (event) => {
+	          if (window.PointerEvent || event.touches.length === 0) {
+	            return;
+	          }
+
+	          event.preventDefault();
+	          startResize(
+	            event.touches[0].clientX,
+	            "touchmove",
+	            ["touchend", "touchcancel"],
+	            (moveEvent) => moveEvent.touches[0]?.clientX
+	          );
 	        });
 	      });
 	    });
