@@ -34,15 +34,15 @@ func FileTransferTab(data PageData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(strategyStateExpression(data.Strategy, data.ReferenceDate, data.TransferSummary.HasRun))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(strategyStateExpression(data.Strategy, data.ReferenceDate, data.TransferPage, data.TransferSummary.HasRun))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 7, Col: 98}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 7, Col: 117}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-tab-panel=\"file-transfer\" class=\"rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-tab-panel=\"file-transfer\" data-transfer-pagination-root class=\"rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -105,7 +105,7 @@ func TransferControlsCard(data PageData) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.DefinitionsPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 41, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 42, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -118,7 +118,7 @@ func TransferControlsCard(data PageData) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.WorkbookPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 42, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 43, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -131,7 +131,7 @@ func TransferControlsCard(data PageData) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(data.ReferenceDate)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 48, Col: 208}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 49, Col: 208}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -201,7 +201,7 @@ func TransferTableCard(data PageData) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(data.DefinitionsPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 151, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 152, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -214,13 +214,13 @@ func TransferTableCard(data PageData) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(data.WorkbookPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 152, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 153, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"> <input type=\"hidden\" name=\"activeTab\" value=\"file-transfer\"> <input type=\"hidden\" name=\"strategy\" x-bind:value=\"strategy\"> <input type=\"hidden\" name=\"referenceDate\" x-bind:value=\"referenceDate\"> <button type=\"button\" data-transfer-path-check-trigger hx-post=\"/transfer/check-paths\" hx-target=\"#app-shell\" hx-swap=\"outerHTML\" aria-hidden=\"true\" tabindex=\"-1\" class=\"hidden\"></button><div x-show=\"transferTableView === 'configured'\" class=\"space-y-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"> <input type=\"hidden\" name=\"activeTab\" value=\"file-transfer\"> <input type=\"hidden\" name=\"strategy\" x-bind:value=\"strategy\"> <input type=\"hidden\" name=\"referenceDate\" x-bind:value=\"referenceDate\"> <input type=\"hidden\" name=\"transferPage\" x-bind:value=\"transferPage\"> <button type=\"button\" data-transfer-path-check-trigger hx-post=\"/transfer/check-paths\" hx-target=\"#app-shell\" hx-swap=\"outerHTML\" aria-hidden=\"true\" tabindex=\"-1\" class=\"hidden\"></button><div x-show=\"transferTableView === 'configured'\" class=\"space-y-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -250,7 +250,7 @@ func TransferTableCard(data PageData) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(data.SaveMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 160, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 162, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -261,186 +261,220 @@ func TransferTableCard(data PageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"flex flex-wrap items-center gap-3\"><button type=\"submit\" class=\"inline-flex items-center justify-center rounded-2xl bg-ember px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700\">Save workbook changes</button><div class=\"htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600\">Saving changes...</div></div><div data-transfer-editor class=\"overflow-x-auto\"><table class=\"min-w-full divide-y divide-slate-200 text-left text-sm\"><thead><tr class=\"text-slate-500\"><th class=\"pb-3 pr-4 font-medium\">#</th><th class=\"pb-3 pr-4 font-medium\">Source</th><th class=\"pb-3 pr-4 font-medium\">Source Exists</th><th class=\"pb-3 pr-4 font-medium\">Destination</th><th class=\"pb-3 pr-4 font-medium\">Destination Exists</th><th class=\"pb-3 pr-4 font-medium\">Status</th><th class=\"pb-3 font-medium\">Detail</th><th class=\"pb-3 pl-4 font-medium\">Action</th></tr></thead> <tbody data-transfer-rows class=\"divide-y divide-slate-100\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"flex flex-wrap items-center gap-3\"><button type=\"submit\" class=\"inline-flex items-center justify-center rounded-2xl bg-ember px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700\">Save workbook changes</button><div class=\"htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600\">Saving changes...</div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = TransferPaginationControls().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div x-cloak x-show=\"transferCount === 0\" class=\"rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600\">No file transfer rows match the current view.</div><div x-show=\"transferCount > 0\" data-transfer-editor class=\"overflow-x-auto\"><table class=\"min-w-full divide-y divide-slate-200 text-left text-sm\"><thead><tr class=\"text-slate-500\"><th class=\"pb-3 pr-4 font-medium\">#</th><th class=\"pb-3 pr-4 font-medium\">Source</th><th class=\"pb-3 pr-4 font-medium\">Source Exists</th><th class=\"pb-3 pr-4 font-medium\">Destination</th><th class=\"pb-3 pr-4 font-medium\">Destination Exists</th><th class=\"pb-3 pr-4 font-medium\">Status</th><th class=\"pb-3 font-medium\">Detail</th><th class=\"pb-3 pl-4 font-medium\">Action</th></tr></thead> <tbody data-transfer-rows class=\"divide-y divide-slate-100\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, row := range data.TransferRows {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<tr class=\"align-top\"><td class=\"py-3 pr-4 text-slate-500\"><input type=\"hidden\" name=\"transferExcelRow\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<tr x-show=\"transferRowVisible($el)\" data-transfer-row data-transfer-dest-exists=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
-			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(row.ExcelRow)
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(transferDestExistsValue(row.DestExists))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 186, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 190, Col: 129}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\"> <span data-transfer-row-number>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" data-transfer-search=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
-			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(row.Index)
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(transferRowSearchText(row))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 187, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 190, Col: 181}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span></td><td class=\"py-3 pr-4\"><div x-data=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"align-top\"><td class=\"py-3 pr-4 text-slate-500\"><input type=\"hidden\" name=\"transferExcelRow\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(row.Src))
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(row.ExcelRow)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 190, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 192, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"transferSrc\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\"> <span data-transfer-row-number>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(row.Src)
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(row.Index)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 191, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 193, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" class=\"w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></td><td class=\"py-3 pr-4\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if row.SrcExists {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700\">Yes</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<span class=\"inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600\">No</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</td><td class=\"py-3 pr-4\"><div x-data=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</span></td><td class=\"py-3 pr-4\"><div x-data=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(row.Dest))
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(row.Src))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 203, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 196, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"transferDest\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"transferSrc\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
-			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(row.Dest)
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(row.Src)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 204, Col: 90}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 197, Col: 88}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" class=\"w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></td><td class=\"py-3 pr-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" class=\"w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></td><td class=\"py-3 pr-4\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if row.SrcExists {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span class=\"inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700\">Yes</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600\">No</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</td><td class=\"py-3 pr-4\"><div x-data=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var19 string
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(row.Dest))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 209, Col: 60}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"transferDest\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var20 string
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(row.Dest)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 210, Col: 90}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" class=\"w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></td><td class=\"py-3 pr-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if row.DestExists {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700\">Yes</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<span class=\"inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700\">Yes</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<span class=\"inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600\">No</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span class=\"inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600\">No</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</td><td class=\"py-3 pr-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</td><td class=\"py-3 pr-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if row.Status != "" {
-				var templ_7745c5c3_Var19 = []any{transferStatusClasses(row.Badge)}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var19...)
+				var templ_7745c5c3_Var21 = []any{transferStatusClasses(row.Badge)}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var21...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<span class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var20 string
-				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var19).String())
+				var templ_7745c5c3_Var22 string
+				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var21).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 1, Col: 0}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var21 string
-				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(row.Status)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 217, Col: 71}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span class=\"text-slate-400\">Not run</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</td><td class=\"py-3 text-slate-600\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if row.Detail != "" {
-				var templ_7745c5c3_Var22 string
-				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(row.Detail)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 224, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var23 string
+				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(row.Status)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 223, Col: 71}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "No execution yet.")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<span class=\"text-slate-400\">Not run</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</td><td class=\"py-3 pl-4\"><button type=\"button\" onclick=\"window.removeTransferRow(this)\" aria-label=\"Remove row\" title=\"Remove row\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</td><td class=\"py-3 text-slate-600\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if row.Detail != "" {
+				var templ_7745c5c3_Var24 string
+				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(row.Detail)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 230, Col: 22}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "No execution yet.")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</td><td class=\"py-3 pl-4\"><button type=\"button\" onclick=\"window.removeTransferRow(this)\" aria-label=\"Remove row\" title=\"Remove row\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -448,38 +482,38 @@ func TransferTableCard(data PageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</button></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</button></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</tbody></table><template data-transfer-row-template><tr class=\"align-top\"><td class=\"py-3 pr-4 text-slate-500\"><input type=\"hidden\" name=\"transferExcelRow\" value=\"0\"> <span data-transfer-row-number></span></td><td class=\"py-3 pr-4\"><div x-data=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</tbody></table><template data-transfer-row-template><tr x-show=\"transferRowVisible($el)\" data-transfer-row data-transfer-dest-exists=\"no\" data-transfer-search=\"\" class=\"align-top\"><td class=\"py-3 pr-4 text-slate-500\"><input type=\"hidden\" name=\"transferExcelRow\" value=\"0\"> <span data-transfer-row-number></span></td><td class=\"py-3 pr-4\"><div x-data=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(""))
+		var templ_7745c5c3_Var25 string
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(""))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 245, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 251, Col: 52}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"transferSrc\" class=\"w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></td><td class=\"py-3 pr-4\"><span class=\"inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600\">Recheck after save</span></td><td class=\"py-3 pr-4\"><div x-data=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(""))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 254, Col: 52}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"transferSrc\" class=\"w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></td><td class=\"py-3 pr-4\"><span class=\"inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600\">Recheck after save</span></td><td class=\"py-3 pr-4\"><div x-data=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"transferDest\" class=\"w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></td><td class=\"py-3 pr-4\"><span class=\"inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600\">Recheck after save</span></td><td class=\"py-3 pr-4\"><span class=\"text-slate-400\">Not run</span></td><td class=\"py-3 text-slate-600\">New row.</td><td class=\"py-3 pl-4\"><button type=\"button\" onclick=\"window.removeTransferRow(this)\" aria-label=\"Remove row\" title=\"Remove row\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100\">")
+		var templ_7745c5c3_Var26 string
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(transferPathFieldExpression(""))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 260, Col: 52}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\"><input x-model=\"value\" x-bind:title=\"value\" name=\"transferDest\" class=\"w-full min-w-[18rem] rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs text-slate-900 outline-none transition-[min-width,border-color,box-shadow] duration-150 focus:min-w-[34rem] focus:border-pine focus:ring-4 focus:ring-teal-100 sm:text-sm\"><p x-cloak x-show=\"window.transferTemplateHasPlaceholder(value)\" x-text=\"window.transferTemplatePreview(value, referenceDate)\" class=\"mt-2 font-mono text-[11px] text-slate-500\"></p></div></td><td class=\"py-3 pr-4\"><span class=\"inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600\">Recheck after save</span></td><td class=\"py-3 pr-4\"><span class=\"text-slate-400\">Not run</span></td><td class=\"py-3 text-slate-600\">New row.</td><td class=\"py-3 pl-4\"><button type=\"button\" onclick=\"window.removeTransferRow(this)\" aria-label=\"Remove row\" title=\"Remove row\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -487,7 +521,7 @@ func TransferTableCard(data PageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</button></td></tr></template></div><div class=\"flex justify-center pt-2\"><button type=\"button\" onclick=\"window.addTransferRow(this)\" class=\"inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900\">Add row</button></div></div><div x-show=\"transferTableView === 'summary'\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</button></td></tr></template></div><div class=\"flex justify-center pt-2\"><button type=\"button\" onclick=\"window.addTransferRow(this)\" class=\"inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900\">Add row</button></div></div><div x-show=\"transferTableView === 'summary'\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -495,7 +529,7 @@ func TransferTableCard(data PageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -519,25 +553,83 @@ func TransferViewControls(data PageData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var25 == nil {
-			templ_7745c5c3_Var25 = templ.NopComponent
+		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var27 == nil {
+			templ_7745c5c3_Var27 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<div class=\"flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2\"><div class=\"inline-flex rounded-2xl bg-white p-1 ring-1 ring-slate-200\"><button type=\"button\" x-on:click=\"transferTableView = 'configured'\" :class=\"transferTableView === 'configured' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-sm font-semibold transition\">Configured rows</button> <button type=\"button\" x-on:click=\"transferTableView = 'summary'\" :class=\"transferTableView === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-sm font-semibold transition\">Summary</button></div><div x-show=\"transferTableView === 'summary'\" class=\"flex flex-wrap items-center gap-2\"><div class=\"inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200\"><button type=\"button\" x-on:click=\"setTransferSummaryFilter('all')\" :class=\"transferSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">All</button> <button type=\"button\" x-on:click=\"setTransferSummaryFilter('created')\" :class=\"transferSummaryFilter === 'created' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Created</button> <button type=\"button\" x-on:click=\"setTransferSummaryFilter('overwritten')\" :class=\"transferSummaryFilter === 'overwritten' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Overwritten</button> <button type=\"button\" x-on:click=\"setTransferSummaryFilter('skipped')\" :class=\"transferSummaryFilter === 'skipped' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Skipped</button> <button type=\"button\" x-on:click=\"setTransferSummaryFilter('error')\" :class=\"transferSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Errors</button></div><p class=\"text-sm font-medium text-slate-600\"><span x-text=\"transferSummaryCount\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2\"><div class=\"inline-flex rounded-2xl bg-white p-1 ring-1 ring-slate-200\"><button type=\"button\" x-on:click=\"transferTableView = 'configured'\" :class=\"transferTableView === 'configured' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-sm font-semibold transition\">Configured rows</button> <button type=\"button\" x-on:click=\"transferTableView = 'summary'\" :class=\"transferTableView === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-sm font-semibold transition\">Summary</button></div><div x-show=\"transferTableView === 'configured'\" class=\"flex min-w-[18rem] flex-1 flex-wrap items-center justify-end gap-2\"><label class=\"min-w-[16rem] flex-1 sm:max-w-[24rem]\"><span class=\"sr-only\">Search file paths</span> <input x-model.debounce.150ms=\"transferSearchQuery\" x-on:input=\"goToTransferPage(1)\" type=\"search\" placeholder=\"Search file patterns\" class=\"w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100\"></label><div class=\"inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200\"><button type=\"button\" x-on:click=\"setTransferDestExistsFilter('all')\" :class=\"transferDestExistsFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">All</button> <button type=\"button\" x-on:click=\"setTransferDestExistsFilter('yes')\" :class=\"transferDestExistsFilter === 'yes' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Dest Yes</button> <button type=\"button\" x-on:click=\"setTransferDestExistsFilter('no')\" :class=\"transferDestExistsFilter === 'no' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Dest No</button></div><p class=\"text-sm font-medium text-slate-600\"><span x-text=\"transferCount\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(len(data.TransferSummaryRows))
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(data.TransferCount)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 300, Col: 116}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 308, Col: 98}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</span> row(s)</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</span> row(s)</p></div><div x-show=\"transferTableView === 'summary'\" class=\"flex flex-wrap items-center gap-2\"><div class=\"inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200\"><button type=\"button\" x-on:click=\"setTransferSummaryFilter('all')\" :class=\"transferSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">All</button> <button type=\"button\" x-on:click=\"setTransferSummaryFilter('created')\" :class=\"transferSummaryFilter === 'created' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Created</button> <button type=\"button\" x-on:click=\"setTransferSummaryFilter('overwritten')\" :class=\"transferSummaryFilter === 'overwritten' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Overwritten</button> <button type=\"button\" x-on:click=\"setTransferSummaryFilter('skipped')\" :class=\"transferSummaryFilter === 'skipped' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Skipped</button> <button type=\"button\" x-on:click=\"setTransferSummaryFilter('error')\" :class=\"transferSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'\" class=\"rounded-xl px-3 py-1.5 text-xs font-semibold transition\">Errors</button></div><p class=\"text-sm font-medium text-slate-600\"><span x-text=\"transferSummaryCount\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(len(data.TransferSummaryRows))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 318, Col: 116}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</span> row(s)</p></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func TransferPaginationControls() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var30 == nil {
+			templ_7745c5c3_Var30 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div x-cloak x-show=\"transferCount > transferPageSize\" class=\"flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2\"><p class=\"text-sm font-medium text-slate-600\">Showing <span class=\"font-semibold text-slate-900\" x-text=\"transferPageStart\"></span>-<span class=\"font-semibold text-slate-900\" x-text=\"transferPageEnd\"></span> of <span class=\"font-semibold text-slate-900\" x-text=\"transferCount\"></span></p><div class=\"flex items-center gap-2\"><button type=\"button\" x-on:click=\"goToTransferPage(transferPage - 1)\" x-bind:disabled=\"transferPage <= 1\" aria-label=\"Previous page\" title=\"Previous page\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40\"><span aria-hidden=\"true\" class=\"inline-flex rotate-180\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ChevronRightIcon().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</span></button> <span class=\"min-w-[6.5rem] text-center text-sm font-semibold text-slate-700\">Page <span x-text=\"transferPage\"></span> of <span x-text=\"transferPageCount\"></span></span> <button type=\"button\" x-on:click=\"goToTransferPage(transferPage + 1)\" x-bind:disabled=\"transferPage >= transferPageCount\" aria-label=\"Next page\" title=\"Next page\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ChevronRightIcon().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</button></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -561,18 +653,18 @@ func TransferRunSummaryTable(data PageData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var27 == nil {
-			templ_7745c5c3_Var27 = templ.NopComponent
+		templ_7745c5c3_Var31 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var31 == nil {
+			templ_7745c5c3_Var31 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if !data.TransferSummary.HasRun {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div class=\"rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600\">No transfer run yet.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<div class=\"rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600\">No transfer run yet.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"space-y-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<div class=\"space-y-3\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -580,7 +672,7 @@ func TransferRunSummaryTable(data PageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div class=\"overflow-x-auto rounded-2xl border border-slate-200\"><table data-resizable-table data-resizable-key=\"transfer-summary\" class=\"min-w-[81rem] table-fixed divide-y divide-slate-200 text-left text-sm\"><colgroup><col data-resizable-column=\"index\" style=\"width: 4rem\"> <col data-resizable-column=\"status\" style=\"width: 9rem\"> <col data-resizable-column=\"source\" style=\"width: 22rem\"> <col data-resizable-column=\"destination\" style=\"width: 22rem\"> <col data-resizable-column=\"detail\" style=\"width: 24rem\"></colgroup> <thead class=\"bg-slate-50\"><tr class=\"text-xs font-semibold uppercase text-slate-500\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<div class=\"overflow-x-auto rounded-2xl border border-slate-200\"><table data-resizable-table data-resizable-key=\"transfer-summary\" class=\"min-w-[81rem] table-fixed divide-y divide-slate-200 text-left text-sm\"><colgroup><col data-resizable-column=\"index\" style=\"width: 4rem\"> <col data-resizable-column=\"status\" style=\"width: 9rem\"> <col data-resizable-column=\"source\" style=\"width: 22rem\"> <col data-resizable-column=\"destination\" style=\"width: 22rem\"> <col data-resizable-column=\"detail\" style=\"width: 24rem\"></colgroup> <thead class=\"bg-slate-50\"><tr class=\"text-xs font-semibold uppercase text-slate-500\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -604,73 +696,73 @@ func TransferRunSummaryTable(data PageData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</tr></thead> <tbody class=\"divide-y divide-slate-100\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</tr></thead> <tbody class=\"divide-y divide-slate-100\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, row := range data.TransferSummaryRows {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<tr x-show=\"transferSummaryRowVisible($el)\" data-transfer-summary-row data-summary-status=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var28 string
-				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(row.Status)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 331, Col: 109}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\" class=\"align-top\"><td class=\"whitespace-nowrap px-3 py-2 font-medium text-slate-500\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var29 string
-				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(row.Index)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 332, Col: 86}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</td><td class=\"whitespace-nowrap px-3 py-2\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var30 = []any{transferStatusClasses(row.Badge)}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var30...)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<span class=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var31 string
-				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var30).String())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 1, Col: 0}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<tr x-show=\"transferSummaryRowVisible($el)\" data-transfer-summary-row data-summary-status=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var32 string
 				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(row.Status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 334, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 370, Col: 109}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</span></td><td class=\"px-3 py-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\" class=\"align-top\"><td class=\"whitespace-nowrap px-3 py-2 font-medium text-slate-500\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var33 string
+				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(row.Index)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 371, Col: 86}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</td><td class=\"whitespace-nowrap px-3 py-2\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var34 = []any{transferStatusClasses(row.Badge)}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var34...)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<span class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var35 string
+				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var34).String())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 1, Col: 0}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var36 string
+				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(row.Status)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 373, Col: 70}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</span></td><td class=\"px-3 py-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -678,7 +770,7 @@ func TransferRunSummaryTable(data PageData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</td><td class=\"px-3 py-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</td><td class=\"px-3 py-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -686,25 +778,25 @@ func TransferRunSummaryTable(data PageData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</td><td class=\"break-words px-3 py-2 text-slate-700\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</td><td class=\"break-words px-3 py-2 text-slate-700\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var33 string
-				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(row.Detail)
+				var templ_7745c5c3_Var37 string
+				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(row.Detail)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 338, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/file_transfer.templ`, Line: 377, Col: 69}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</tbody></table></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</tbody></table></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -729,12 +821,12 @@ func TransferSummaryPaginationControls() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var34 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var34 == nil {
-			templ_7745c5c3_Var34 = templ.NopComponent
+		templ_7745c5c3_Var38 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var38 == nil {
+			templ_7745c5c3_Var38 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<div x-cloak x-show=\"transferSummaryCount > transferSummaryPageSize\" class=\"flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2\"><p class=\"text-sm font-medium text-slate-600\">Showing <span class=\"font-semibold text-slate-900\" x-text=\"transferSummaryPageStart\"></span>-<span class=\"font-semibold text-slate-900\" x-text=\"transferSummaryPageEnd\"></span> of <span class=\"font-semibold text-slate-900\" x-text=\"transferSummaryCount\"></span></p><div class=\"flex items-center gap-2\"><button type=\"button\" x-on:click=\"goToTransferSummaryPage(transferSummaryPage - 1)\" x-bind:disabled=\"transferSummaryPage <= 1\" aria-label=\"Previous summary page\" title=\"Previous summary page\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40\"><span aria-hidden=\"true\" class=\"inline-flex rotate-180\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<div x-cloak x-show=\"transferSummaryCount > transferSummaryPageSize\" class=\"flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2\"><p class=\"text-sm font-medium text-slate-600\">Showing <span class=\"font-semibold text-slate-900\" x-text=\"transferSummaryPageStart\"></span>-<span class=\"font-semibold text-slate-900\" x-text=\"transferSummaryPageEnd\"></span> of <span class=\"font-semibold text-slate-900\" x-text=\"transferSummaryCount\"></span></p><div class=\"flex items-center gap-2\"><button type=\"button\" x-on:click=\"goToTransferSummaryPage(transferSummaryPage - 1)\" x-bind:disabled=\"transferSummaryPage <= 1\" aria-label=\"Previous summary page\" title=\"Previous summary page\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40\"><span aria-hidden=\"true\" class=\"inline-flex rotate-180\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -742,7 +834,7 @@ func TransferSummaryPaginationControls() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</span></button> <span class=\"min-w-[6.5rem] text-center text-sm font-semibold text-slate-700\">Page <span x-text=\"transferSummaryPage\"></span> of <span x-text=\"transferSummaryPageCount\"></span></span> <button type=\"button\" x-on:click=\"goToTransferSummaryPage(transferSummaryPage + 1)\" x-bind:disabled=\"transferSummaryPage >= transferSummaryPageCount\" aria-label=\"Next summary page\" title=\"Next summary page\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</span></button> <span class=\"min-w-[6.5rem] text-center text-sm font-semibold text-slate-700\">Page <span x-text=\"transferSummaryPage\"></span> of <span x-text=\"transferSummaryPageCount\"></span></span> <button type=\"button\" x-on:click=\"goToTransferSummaryPage(transferSummaryPage + 1)\" x-bind:disabled=\"transferSummaryPage >= transferSummaryPageCount\" aria-label=\"Next summary page\" title=\"Next summary page\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -750,7 +842,7 @@ func TransferSummaryPaginationControls() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</button></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</button></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

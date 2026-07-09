@@ -28,6 +28,7 @@ func (a *application) newPageData(
 		ActiveTab:          tabConfiguration,
 		Strategy:           string(defaultTransferMode),
 		ReferenceDate:      defaultReferenceDate(),
+		TransferPage:       1,
 		CheckReferenceDate: defaultReferenceDate(),
 		CheckPage:          1,
 	}
@@ -53,6 +54,7 @@ func (a *application) pageDataFromRequest(
 
 	data.Strategy = string(parseTransferMode(request.FormValue("strategy")))
 	data.ReferenceDate = normalizeReferenceDate(request.FormValue("referenceDate"))
+	data.TransferPage = normalizeTransferPage(request.FormValue("transferPage"))
 	data.CheckReferenceDate = normalizeReferenceDate(request.FormValue("checkReferenceDate"))
 	data.CheckPage = normalizeCheckPage(request.FormValue("checkPage"))
 	data.ActiveTab = normalizeTab(request.FormValue("activeTab"))
@@ -195,6 +197,14 @@ func tabPath(tab string) string {
 }
 
 func normalizeCheckPage(value string) int {
+	return normalizePositivePage(value)
+}
+
+func normalizeTransferPage(value string) int {
+	return normalizePositivePage(value)
+}
+
+func normalizePositivePage(value string) int {
 	page, err := strconv.Atoi(strings.TrimSpace(value))
 	if err != nil || page < 1 {
 		return 1

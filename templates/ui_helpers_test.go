@@ -1,6 +1,9 @@
 package templates
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestCheckConfigStartsExpanded(t *testing.T) {
 	tests := []struct {
@@ -58,6 +61,27 @@ func TestCheckConfigStartsExpanded(t *testing.T) {
 				t.Fatalf("checkConfigStartsExpanded() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestTransferRowHelpers(t *testing.T) {
+	if got := transferDestExistsValue(true); got != "yes" {
+		t.Fatalf("transferDestExistsValue(true) = %q, want yes", got)
+	}
+	if got := transferDestExistsValue(false); got != "no" {
+		t.Fatalf("transferDestExistsValue(false) = %q, want no", got)
+	}
+
+	text := transferRowSearchText(TransferRowView{
+		Src:          `\\server\share\May Fargo Something File.xlsx`,
+		ResolvedSrc:  `\\server\share\May Fargo Something File.xlsx`,
+		Dest:         `D:\reports\May Fargo Something File.xlsx`,
+		ResolvedDest: `D:\reports\May Fargo Something File.xlsx`,
+	})
+	for _, want := range []string{"May Fargo Something File", `D:\reports`} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("transferRowSearchText() = %q, want it to contain %q", text, want)
+		}
 	}
 }
 

@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	checkRowsPerPage   = 10
-	summaryRowsPerPage = 10
+	transferRowsPerPage = 10
+	checkRowsPerPage    = 10
+	summaryRowsPerPage  = 10
 )
 
 func appShellExpression(activeTab string) string {
@@ -21,8 +22,12 @@ func appShellExpression(activeTab string) string {
 func strategyStateExpression(
 	strategy string,
 	referenceDate string,
+	transferPage int,
 	summaryHasRun bool,
 ) string {
+	if transferPage < 1 {
+		transferPage = 1
+	}
 	tableView := "configured"
 	if summaryHasRun {
 		tableView = "summary"
@@ -33,14 +38,41 @@ func strategyStateExpression(
 			strategy: %q,
 			referenceDate: %q,
 			transferTableView: %q,
+			transferSearchQuery: "",
+			transferDestExistsFilter: "all",
+			transferPage: %d,
+			transferPageSize: %d,
 			transferSummaryFilter: "all",
 			transferSummaryPage: 1,
 			transferSummaryPageSize: %d,
+			init() {
+				this.goToTransferPage(this.transferPage);
+				this.goToTransferSummaryPage(this.transferSummaryPage);
+			},
+			get transferFilteredRows() { return window.transferFilteredRows(this.$root, this.transferDestExistsFilter, this.transferSearchQuery); },
+			get transferCount() { return this.transferFilteredRows.length; },
+			get transferPageCount() { return Math.max(1, Math.ceil(this.transferCount / this.transferPageSize)); },
+			get transferPageStart() { return this.transferCount === 0 ? 0 : ((this.transferPage - 1) * this.transferPageSize) + 1; },
+			get transferPageEnd() { return Math.min(this.transferPage * this.transferPageSize, this.transferCount); },
 			get transferSummaryFilteredRows() { return window.summaryFilteredRows(this.$root, "[data-transfer-summary-row]", this.transferSummaryFilter); },
 			get transferSummaryCount() { return this.transferSummaryFilteredRows.length; },
 			get transferSummaryPageCount() { return Math.max(1, Math.ceil(this.transferSummaryCount / this.transferSummaryPageSize)); },
 			get transferSummaryPageStart() { return this.transferSummaryCount === 0 ? 0 : ((this.transferSummaryPage - 1) * this.transferSummaryPageSize) + 1; },
 			get transferSummaryPageEnd() { return Math.min(this.transferSummaryPage * this.transferSummaryPageSize, this.transferSummaryCount); },
+			setTransferDestExistsFilter(filter) {
+				this.transferDestExistsFilter = filter;
+				this.goToTransferPage(1);
+			},
+			goToTransferPage(page) {
+				const nextPage = Number(page) || 1;
+				this.transferPage = Math.min(Math.max(nextPage, 1), this.transferPageCount);
+			},
+			refreshTransferPagination() {
+				this.goToTransferPage(this.transferPage);
+			},
+			transferRowVisible(row) {
+				return window.summaryRowVisible(row, this.transferFilteredRows, this.transferPage, this.transferPageSize);
+			},
 			setTransferSummaryFilter(filter) {
 				this.transferSummaryFilter = filter;
 				this.goToTransferSummaryPage(1);
@@ -56,12 +88,33 @@ func strategyStateExpression(
 		strategy,
 		referenceDate,
 		tableView,
+		transferPage,
+		transferRowsPerPage,
 		summaryRowsPerPage,
 	)
 }
 
 func transferPathFieldExpression(value string) string {
 	return fmt.Sprintf(`{ value: %q }`, value)
+}
+
+func transferDestExistsValue(exists bool) string {
+	if exists {
+		return "yes"
+	}
+
+	return "no"
+}
+
+func transferRowSearchText(row TransferRowView) string {
+	parts := []string{
+		row.Src,
+		row.ResolvedSrc,
+		row.Dest,
+		row.ResolvedDest,
+	}
+
+	return strings.Join(parts, " ")
 }
 
 func referenceDateStateExpression(referenceDate string) string {

@@ -173,6 +173,53 @@ templ PageScripts() {
 	    return rowNumber > start && rowNumber <= start + size;
 	  };
 
+	  window.normalizedTransferSearchText = (value) => {
+	    return String(value || "")
+	      .toLowerCase()
+	      .replace(/[^a-z0-9]+/g, " ")
+	      .replace(/\s+/g, " ")
+	      .trim();
+	  };
+
+	  window.transferRowSearchText = (row) => {
+	    const configuredText = row?.dataset?.transferSearch || "";
+	    const currentText = Array.from(row?.querySelectorAll("input[name='transferSrc'], input[name='transferDest']") || [])
+	      .map((input) => input.value)
+	      .join(" ");
+	    return `${configuredText} ${currentText}`;
+	  };
+
+	  window.transferRowMatchesSearch = (row, query) => {
+	    const needle = window.normalizedTransferSearchText(query);
+	    if (!needle) {
+	      return true;
+	    }
+
+	    const haystack = window.normalizedTransferSearchText(window.transferRowSearchText(row));
+	    if (haystack.includes(needle)) {
+	      return true;
+	    }
+
+	    return needle.split(" ").filter(Boolean).every((term) => haystack.includes(term));
+	  };
+
+	  window.transferRowMatchesDestExists = (row, filter) => {
+	    const normalizedFilter = String(filter || "all").toLowerCase();
+	    if (normalizedFilter === "all") {
+	      return true;
+	    }
+
+	    return String(row?.dataset?.transferDestExists || "").toLowerCase() === normalizedFilter;
+	  };
+
+	  window.transferFilteredRows = (root, destExistsFilter, searchQuery) => {
+	    const scope = root || document;
+	    return Array.from(scope.querySelectorAll("[data-transfer-row]")).filter((row) => {
+	      return window.transferRowMatchesDestExists(row, destExistsFilter) &&
+	        window.transferRowMatchesSearch(row, searchQuery);
+	    });
+	  };
+
 	  window.summaryStatusVisible = (status, filter) => {
 	    const normalizedStatus = String(status || "").toLowerCase().replace(/\s+/g, "-");
 	    const normalizedFilter = String(filter || "all").toLowerCase();
@@ -406,6 +453,23 @@ templ PageScripts() {
 	    });
 	  };
 
+	  window.refreshTransferPagination = (editor, options = {}) => {
+	    const root = editor?.closest("[data-transfer-pagination-root]");
+	    if (!root || !window.Alpine) {
+	      return;
+	    }
+
+	    const state = window.Alpine.$data(root);
+	    if (!state || typeof state.refreshTransferPagination !== "function") {
+	      return;
+	    }
+
+	    state.refreshTransferPagination(editor);
+	    if (options.page === "last" && typeof state.goToTransferPage === "function") {
+	      state.goToTransferPage(state.transferPageCount);
+	    }
+	  };
+
 	  window.addTransferRow = (button) => {
 	    const editor = button.closest("form")?.querySelector("[data-transfer-editor]");
 	    const template = editor?.querySelector("template[data-transfer-row-template]");
@@ -418,6 +482,11 @@ templ PageScripts() {
 	    window.refreshTransferRowNumbers(editor);
 
 	    const newRow = rows.lastElementChild;
+	    if (window.Alpine && newRow) {
+	      window.Alpine.initTree(newRow);
+	    }
+	    window.refreshTransferPagination(editor, { page: "last" });
+
 	    const firstInput = newRow?.querySelector("input[name='transferSrc']");
 	    if (firstInput) {
 	      firstInput.focus();
@@ -433,6 +502,7 @@ templ PageScripts() {
 
 	    row.remove();
 	    window.refreshTransferRowNumbers(editor);
+	    window.refreshTransferPagination(editor);
 	  };
 
 	  window.updateCheckRuleCount = (config) => {

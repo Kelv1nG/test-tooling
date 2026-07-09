@@ -4,8 +4,9 @@ templ FileTransferTab(data PageData) {
 	<section
 		x-cloak
 		x-show="activeTab === 'file-transfer'"
-		x-data={ strategyStateExpression(data.Strategy, data.ReferenceDate, data.TransferSummary.HasRun) }
+		x-data={ strategyStateExpression(data.Strategy, data.ReferenceDate, data.TransferPage, data.TransferSummary.HasRun) }
 		data-tab-panel="file-transfer"
+		data-transfer-pagination-root
 		class="rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8"
 	>
 		if data.HasConfig {
@@ -153,6 +154,7 @@ templ TransferTableCard(data PageData) {
 			<input type="hidden" name="activeTab" value="file-transfer"/>
 			<input type="hidden" name="strategy" x-bind:value="strategy"/>
 			<input type="hidden" name="referenceDate" x-bind:value="referenceDate"/>
+			<input type="hidden" name="transferPage" x-bind:value="transferPage"/>
 			<button type="button" data-transfer-path-check-trigger hx-post="/transfer/check-paths" hx-target="#app-shell" hx-swap="outerHTML" aria-hidden="true" tabindex="-1" class="hidden"></button>
 
 			<div x-show="transferTableView === 'configured'" class="space-y-4">
@@ -165,7 +167,11 @@ templ TransferTableCard(data PageData) {
 					<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Saving changes...</div>
 				</div>
 
-				<div data-transfer-editor class="overflow-x-auto">
+				@TransferPaginationControls()
+
+				<div x-cloak x-show="transferCount === 0" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No file transfer rows match the current view.</div>
+
+				<div x-show="transferCount > 0" data-transfer-editor class="overflow-x-auto">
 				<table class="min-w-full divide-y divide-slate-200 text-left text-sm">
 					<thead>
 						<tr class="text-slate-500">
@@ -181,7 +187,7 @@ templ TransferTableCard(data PageData) {
 					</thead>
 					<tbody data-transfer-rows class="divide-y divide-slate-100">
 						for _, row := range data.TransferRows {
-							<tr class="align-top">
+							<tr x-show="transferRowVisible($el)" data-transfer-row data-transfer-dest-exists={ transferDestExistsValue(row.DestExists) } data-transfer-search={ transferRowSearchText(row) } class="align-top">
 								<td class="py-3 pr-4 text-slate-500">
 									<input type="hidden" name="transferExcelRow" value={ row.ExcelRow }/>
 									<span data-transfer-row-number>{ row.Index }</span>
@@ -236,7 +242,7 @@ templ TransferTableCard(data PageData) {
 					</tbody>
 				</table>
 				<template data-transfer-row-template>
-					<tr class="align-top">
+					<tr x-show="transferRowVisible($el)" data-transfer-row data-transfer-dest-exists="no" data-transfer-search="" class="align-top">
 						<td class="py-3 pr-4 text-slate-500">
 							<input type="hidden" name="transferExcelRow" value="0"/>
 							<span data-transfer-row-number></span>
@@ -289,6 +295,18 @@ templ TransferViewControls(data PageData) {
 			<button type="button" x-on:click="transferTableView = 'configured'" :class="transferTableView === 'configured' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-sm font-semibold transition">Configured rows</button>
 			<button type="button" x-on:click="transferTableView = 'summary'" :class="transferTableView === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-sm font-semibold transition">Summary</button>
 		</div>
+		<div x-show="transferTableView === 'configured'" class="flex min-w-[18rem] flex-1 flex-wrap items-center justify-end gap-2">
+			<label class="min-w-[16rem] flex-1 sm:max-w-[24rem]">
+				<span class="sr-only">Search file paths</span>
+				<input x-model.debounce.150ms="transferSearchQuery" x-on:input="goToTransferPage(1)" type="search" placeholder="Search file patterns" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
+			</label>
+			<div class="inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200">
+				<button type="button" x-on:click="setTransferDestExistsFilter('all')" :class="transferDestExistsFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">All</button>
+				<button type="button" x-on:click="setTransferDestExistsFilter('yes')" :class="transferDestExistsFilter === 'yes' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Dest Yes</button>
+				<button type="button" x-on:click="setTransferDestExistsFilter('no')" :class="transferDestExistsFilter === 'no' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Dest No</button>
+			</div>
+			<p class="text-sm font-medium text-slate-600"><span x-text="transferCount">{ data.TransferCount }</span> row(s)</p>
+		</div>
 		<div x-show="transferTableView === 'summary'" class="flex flex-wrap items-center gap-2">
 			<div class="inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200">
 				<button type="button" x-on:click="setTransferSummaryFilter('all')" :class="transferSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">All</button>
@@ -298,6 +316,27 @@ templ TransferViewControls(data PageData) {
 				<button type="button" x-on:click="setTransferSummaryFilter('error')" :class="transferSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Errors</button>
 			</div>
 			<p class="text-sm font-medium text-slate-600"><span x-text="transferSummaryCount">{ len(data.TransferSummaryRows) }</span> row(s)</p>
+		</div>
+	</div>
+}
+
+templ TransferPaginationControls() {
+	<div x-cloak x-show="transferCount > transferPageSize" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+		<p class="text-sm font-medium text-slate-600">
+			Showing <span class="font-semibold text-slate-900" x-text="transferPageStart"></span>-<span class="font-semibold text-slate-900" x-text="transferPageEnd"></span> of <span class="font-semibold text-slate-900" x-text="transferCount"></span>
+		</p>
+		<div class="flex items-center gap-2">
+			<button type="button" x-on:click="goToTransferPage(transferPage - 1)" x-bind:disabled="transferPage <= 1" aria-label="Previous page" title="Previous page" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40">
+				<span aria-hidden="true" class="inline-flex rotate-180">
+					@ChevronRightIcon()
+				</span>
+			</button>
+			<span class="min-w-[6.5rem] text-center text-sm font-semibold text-slate-700">
+				Page <span x-text="transferPage"></span> of <span x-text="transferPageCount"></span>
+			</span>
+			<button type="button" x-on:click="goToTransferPage(transferPage + 1)" x-bind:disabled="transferPage >= transferPageCount" aria-label="Next page" title="Next page" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40">
+				@ChevronRightIcon()
+			</button>
 		</div>
 	</div>
 }

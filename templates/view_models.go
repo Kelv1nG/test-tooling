@@ -12,6 +12,7 @@ type PageData struct {
 	SaveMessage         string
 	SaveHasErrors       bool
 	TransferCount       int
+	TransferPage        int
 	CheckCount          int
 	CheckPage           int
 	TransferRows        []TransferRowView
