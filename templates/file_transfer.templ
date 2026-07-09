@@ -45,7 +45,7 @@ templ TransferControlsCard(data PageData) {
 			<div class="flex flex-wrap items-start gap-3">
 				<label class="min-w-[12rem] flex-1 sm:max-w-[15rem]">
 					<div class="text-sm font-semibold text-slate-900">Date for placeholders</div>
-					<input x-model="referenceDate" type="date" name="referenceDate" value={ data.ReferenceDate } class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
+					<input x-model="referenceDate" x-on:change.debounce.300ms="$nextTick(() => $root.querySelector('[data-transfer-path-check-trigger]')?.click())" type="date" name="referenceDate" value={ data.ReferenceDate } class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
 				</label>
 
 				<details class="mt-7 min-w-[18rem] flex-1 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
@@ -153,6 +153,7 @@ templ TransferTableCard(data PageData) {
 			<input type="hidden" name="activeTab" value="file-transfer"/>
 			<input type="hidden" name="strategy" x-bind:value="strategy"/>
 			<input type="hidden" name="referenceDate" x-bind:value="referenceDate"/>
+			<button type="button" data-transfer-path-check-trigger hx-post="/transfer/check-paths" hx-target="#app-shell" hx-swap="outerHTML" aria-hidden="true" tabindex="-1" class="hidden"></button>
 
 			<div x-show="transferTableView === 'configured'" class="space-y-4">
 				if data.SaveMessage != "" {

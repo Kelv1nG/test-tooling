@@ -155,6 +155,45 @@ func (a *application) handleTransfer(
 	a.renderResponse(writer, request, data, http.StatusOK)
 }
 
+func (a *application) handleTransferPathCheck(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	if !allowMethod(writer, request, http.MethodPost) {
+		return
+	}
+
+	data := a.pageDataFromRequest(request)
+	data.ActiveTab = tabFileTransfer
+
+	if err := a.populateConfigData(&data); err != nil {
+		data.LoadError = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	referenceDate, err := parseReferenceDate(data.ReferenceDate)
+	if err != nil {
+		data.SaveHasErrors = true
+		data.SaveMessage = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	rows, err := parseTransferRowsForm(request.Form, referenceDate)
+	data.TransferRows = rows
+	data.TransferCount = len(rows)
+
+	if err != nil {
+		data.SaveHasErrors = true
+		data.SaveMessage = err.Error()
+		a.renderResponse(writer, request, data, http.StatusBadRequest)
+		return
+	}
+
+	a.renderResponse(writer, request, data, http.StatusOK)
+}
+
 func (a *application) handleSaveTransfer(
 	writer http.ResponseWriter,
 	request *http.Request,

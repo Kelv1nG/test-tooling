@@ -9,7 +9,11 @@ import (
 const referenceDateLayout = "2006-01-02"
 
 func defaultReferenceDate() string {
-	return time.Now().Format(referenceDateLayout)
+	return defaultReferenceDateFor(time.Now())
+}
+
+func defaultReferenceDateFor(now time.Time) string {
+	return addMonthsClamped(now, -1).Format(referenceDateLayout)
 }
 
 func normalizeReferenceDate(value string) string {
@@ -41,7 +45,7 @@ func parseReferenceDate(value string) (time.Time, error) {
 func referenceDateForDisplay(value string) time.Time {
 	referenceDate, err := parseReferenceDate(value)
 	if err != nil {
-		return time.Now()
+		return addMonthsClamped(time.Now(), -1)
 	}
 
 	return referenceDate

@@ -70,9 +70,17 @@ templ PageScripts() {
 	    return window.transferTemplatePlaceholderPattern.test(value || "");
 	  };
 
+	  window.defaultTransferTemplateDate = () => {
+	    const now = new Date();
+	    const targetFirstOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+	    const targetLastDay = new Date(targetFirstOfMonth.getFullYear(), targetFirstOfMonth.getMonth() + 1, 0).getDate();
+	    const day = Math.min(now.getDate(), targetLastDay);
+	    return new Date(targetFirstOfMonth.getFullYear(), targetFirstOfMonth.getMonth(), day);
+	  };
+
 	  window.resolveTransferTemplate = (value, referenceDate) => {
 	    const input = value || "";
-	    const date = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
+	    const date = referenceDate ? new Date(`${referenceDate}T00:00:00`) : window.defaultTransferTemplateDate();
 	    if (Number.isNaN(date.getTime())) {
 	      return input;
 	    }
@@ -119,7 +127,7 @@ templ PageScripts() {
 	  };
 
 	  window.addMonthsClamped = (referenceDate, months) => {
-	    const date = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
+	    const date = referenceDate ? new Date(`${referenceDate}T00:00:00`) : window.defaultTransferTemplateDate();
 	    if (Number.isNaN(date.getTime())) {
 	      return null;
 	    }
