@@ -8,7 +8,10 @@ import (
 	"github.com/a-h/templ"
 )
 
-const checkRowsPerPage = 10
+const (
+	checkRowsPerPage   = 10
+	summaryRowsPerPage = 10
+)
 
 func appShellExpression(activeTab string) string {
 	return fmt.Sprintf("appShell(%q)", activeTab)
@@ -25,10 +28,34 @@ func strategyStateExpression(
 	}
 
 	return fmt.Sprintf(
-		`{ strategy: %q, referenceDate: %q, transferTableView: %q, transferSummaryFilter: "all" }`,
+		`{
+			strategy: %q,
+			referenceDate: %q,
+			transferTableView: %q,
+			transferSummaryFilter: "all",
+			transferSummaryPage: 1,
+			transferSummaryPageSize: %d,
+			get transferSummaryFilteredRows() { return window.summaryFilteredRows(this.$root, "[data-transfer-summary-row]", this.transferSummaryFilter); },
+			get transferSummaryCount() { return this.transferSummaryFilteredRows.length; },
+			get transferSummaryPageCount() { return Math.max(1, Math.ceil(this.transferSummaryCount / this.transferSummaryPageSize)); },
+			get transferSummaryPageStart() { return this.transferSummaryCount === 0 ? 0 : ((this.transferSummaryPage - 1) * this.transferSummaryPageSize) + 1; },
+			get transferSummaryPageEnd() { return Math.min(this.transferSummaryPage * this.transferSummaryPageSize, this.transferSummaryCount); },
+			setTransferSummaryFilter(filter) {
+				this.transferSummaryFilter = filter;
+				this.goToTransferSummaryPage(1);
+			},
+			goToTransferSummaryPage(page) {
+				const nextPage = Number(page) || 1;
+				this.transferSummaryPage = Math.min(Math.max(nextPage, 1), this.transferSummaryPageCount);
+			},
+			transferSummaryRowVisible(row) {
+				return window.summaryRowVisible(row, this.transferSummaryFilteredRows, this.transferSummaryPage, this.transferSummaryPageSize);
+			}
+		}`,
 		strategy,
 		referenceDate,
 		tableView,
+		summaryRowsPerPage,
 	)
 }
 
@@ -59,13 +86,23 @@ func checkingTabStateExpression(
 			referenceDate: %q,
 			checkView: %q,
 			checkSummaryFilter: "all",
+			checkSummaryPage: 1,
+			checkSummaryPageSize: %d,
 			checkPage: %d,
 			checkPageSize: %d,
 			checkCount: %d,
-			init() { this.goToCheckPage(this.checkPage); },
+			init() {
+				this.goToCheckPage(this.checkPage);
+				this.goToCheckSummaryPage(this.checkSummaryPage);
+			},
 			get checkPageCount() { return Math.max(1, Math.ceil(this.checkCount / this.checkPageSize)); },
 			get checkPageStart() { return this.checkCount === 0 ? 0 : ((this.checkPage - 1) * this.checkPageSize) + 1; },
 			get checkPageEnd() { return Math.min(this.checkPage * this.checkPageSize, this.checkCount); },
+			get checkSummaryFilteredRows() { return window.summaryFilteredRows(this.$root, "[data-check-summary-row]", this.checkSummaryFilter); },
+			get checkSummaryCount() { return this.checkSummaryFilteredRows.length; },
+			get checkSummaryPageCount() { return Math.max(1, Math.ceil(this.checkSummaryCount / this.checkSummaryPageSize)); },
+			get checkSummaryPageStart() { return this.checkSummaryCount === 0 ? 0 : ((this.checkSummaryPage - 1) * this.checkSummaryPageSize) + 1; },
+			get checkSummaryPageEnd() { return Math.min(this.checkSummaryPage * this.checkSummaryPageSize, this.checkSummaryCount); },
 			goToCheckPage(page) {
 				const nextPage = Number(page) || 1;
 				this.checkPage = Math.min(Math.max(nextPage, 1), this.checkPageCount);
@@ -73,10 +110,22 @@ func checkingTabStateExpression(
 			refreshCheckPagination(editor) {
 				this.checkCount = editor?.querySelectorAll("[data-check-config]").length ?? this.checkCount;
 				this.goToCheckPage(this.checkPage);
+			},
+			setCheckSummaryFilter(filter) {
+				this.checkSummaryFilter = filter;
+				this.goToCheckSummaryPage(1);
+			},
+			goToCheckSummaryPage(page) {
+				const nextPage = Number(page) || 1;
+				this.checkSummaryPage = Math.min(Math.max(nextPage, 1), this.checkSummaryPageCount);
+			},
+			checkSummaryRowVisible(row) {
+				return window.summaryRowVisible(row, this.checkSummaryFilteredRows, this.checkSummaryPage, this.checkSummaryPageSize);
 			}
 		}`,
 		referenceDate,
 		checkView,
+		summaryRowsPerPage,
 		checkPage,
 		checkRowsPerPage,
 		checkCount,
@@ -235,11 +284,20 @@ func safeFileLinkHref(path string) templ.SafeURL {
 	return templ.SafeURL(fileLinkHref(path))
 }
 
-func summaryVisibilityExpression(
-	status string,
-	filterModel string,
-) string {
-	return fmt.Sprintf("window.summaryStatusVisible(%q, %s)", status, filterModel)
+func resizeColumnLabel(label string) string {
+	if label == "#" {
+		return "Resize number column"
+	}
+
+	return "Resize " + label + " column"
+}
+
+func summaryColumnMinWidth(value int) string {
+	if value <= 0 {
+		value = 64
+	}
+
+	return fmt.Sprintf("%d", value)
 }
 
 func escapeFileURLPath(path string) string {

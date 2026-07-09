@@ -290,13 +290,13 @@ templ TransferViewControls(data PageData) {
 		</div>
 		<div x-show="transferTableView === 'summary'" class="flex flex-wrap items-center gap-2">
 			<div class="inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200">
-				<button type="button" x-on:click="transferSummaryFilter = 'all'" :class="transferSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">All</button>
-				<button type="button" x-on:click="transferSummaryFilter = 'created'" :class="transferSummaryFilter === 'created' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Created</button>
-				<button type="button" x-on:click="transferSummaryFilter = 'overwritten'" :class="transferSummaryFilter === 'overwritten' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Overwritten</button>
-				<button type="button" x-on:click="transferSummaryFilter = 'skipped'" :class="transferSummaryFilter === 'skipped' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Skipped</button>
-				<button type="button" x-on:click="transferSummaryFilter = 'error'" :class="transferSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Errors</button>
+				<button type="button" x-on:click="setTransferSummaryFilter('all')" :class="transferSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">All</button>
+				<button type="button" x-on:click="setTransferSummaryFilter('created')" :class="transferSummaryFilter === 'created' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Created</button>
+				<button type="button" x-on:click="setTransferSummaryFilter('overwritten')" :class="transferSummaryFilter === 'overwritten' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Overwritten</button>
+				<button type="button" x-on:click="setTransferSummaryFilter('skipped')" :class="transferSummaryFilter === 'skipped' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Skipped</button>
+				<button type="button" x-on:click="setTransferSummaryFilter('error')" :class="transferSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Errors</button>
 			</div>
-			<p class="text-sm font-medium text-slate-600">{ len(data.TransferSummaryRows) } row(s)</p>
+			<p class="text-sm font-medium text-slate-600"><span x-text="transferSummaryCount">{ len(data.TransferSummaryRows) }</span> row(s)</p>
 		</div>
 	</div>
 }
@@ -305,33 +305,62 @@ templ TransferRunSummaryTable(data PageData) {
 	if !data.TransferSummary.HasRun {
 		<div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No transfer run yet.</div>
 	} else {
-		<div>
+		<div class="space-y-3">
 			<div class="overflow-x-auto rounded-2xl border border-slate-200">
-				<table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+				<table data-resizable-table data-resizable-key="transfer-summary" class="min-w-[81rem] table-fixed divide-y divide-slate-200 text-left text-sm">
+					<colgroup>
+						<col data-resizable-column="index" style="width: 4rem"/>
+						<col data-resizable-column="status" style="width: 9rem"/>
+						<col data-resizable-column="source" style="width: 22rem"/>
+						<col data-resizable-column="destination" style="width: 22rem"/>
+						<col data-resizable-column="detail" style="width: 24rem"/>
+					</colgroup>
 					<thead class="bg-slate-50">
 						<tr class="text-xs font-semibold uppercase text-slate-500">
-							<th class="px-3 py-2">#</th>
-							<th class="px-3 py-2">Status</th>
-							<th class="px-3 py-2">Source</th>
-							<th class="px-3 py-2">Destination</th>
-							<th class="px-3 py-2">Detail</th>
+							@SummaryResizableHeader("index", "#", 56)
+							@SummaryResizableHeader("status", "Status", 96)
+							@SummaryResizableHeader("source", "Source", 160)
+							@SummaryResizableHeader("destination", "Destination", 160)
+							@SummaryResizableHeader("detail", "Detail", 160)
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-100">
 						for _, row := range data.TransferSummaryRows {
-							<tr x-show={ summaryVisibilityExpression(row.Status, "transferSummaryFilter") } class="align-top">
+							<tr x-show="transferSummaryRowVisible($el)" data-transfer-summary-row data-summary-status={ row.Status } class="align-top">
 								<td class="whitespace-nowrap px-3 py-2 font-medium text-slate-500">{ row.Index }</td>
 								<td class="whitespace-nowrap px-3 py-2">
 									<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
 								</td>
 								<td class="px-3 py-2">@FilePathLink(row.Source)</td>
 								<td class="px-3 py-2">@FilePathLink(row.Destination)</td>
-								<td class="min-w-[14rem] px-3 py-2 text-slate-700">{ row.Detail }</td>
+								<td class="break-words px-3 py-2 text-slate-700">{ row.Detail }</td>
 							</tr>
 						}
 					</tbody>
 				</table>
 			</div>
+			@TransferSummaryPaginationControls()
 		</div>
 	}
+}
+
+templ TransferSummaryPaginationControls() {
+	<div x-cloak x-show="transferSummaryCount > transferSummaryPageSize" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+		<p class="text-sm font-medium text-slate-600">
+			Showing <span class="font-semibold text-slate-900" x-text="transferSummaryPageStart"></span>-<span class="font-semibold text-slate-900" x-text="transferSummaryPageEnd"></span> of <span class="font-semibold text-slate-900" x-text="transferSummaryCount"></span>
+		</p>
+		<div class="flex items-center gap-2">
+			<button type="button" x-on:click="goToTransferSummaryPage(transferSummaryPage - 1)" x-bind:disabled="transferSummaryPage <= 1" aria-label="Previous summary page" title="Previous summary page" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40">
+				<span aria-hidden="true" class="inline-flex rotate-180">
+					@ChevronRightIcon()
+				</span>
+			</button>
+			<span class="min-w-[6.5rem] text-center text-sm font-semibold text-slate-700">
+				Page <span x-text="transferSummaryPage"></span> of <span x-text="transferSummaryPageCount"></span>
+			</span>
+			<button type="button" x-on:click="goToTransferSummaryPage(transferSummaryPage + 1)" x-bind:disabled="transferSummaryPage >= transferSummaryPageCount" aria-label="Next summary page" title="Next summary page" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40">
+				@ChevronRightIcon()
+			</button>
+		</div>
+	</div>
 }

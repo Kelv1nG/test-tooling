@@ -106,14 +106,14 @@ templ CheckViewControls(data PageData) {
 		</div>
 		<div x-show="checkView === 'summary'" class="flex flex-wrap items-center gap-2">
 			<div class="inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200">
-				<button type="button" x-on:click="checkSummaryFilter = 'all'" :class="checkSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">All</button>
-				<button type="button" x-on:click="checkSummaryFilter = 'issues'" :class="checkSummaryFilter === 'issues' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Issues</button>
-				<button type="button" x-on:click="checkSummaryFilter = 'changed'" :class="checkSummaryFilter === 'changed' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Changed</button>
-				<button type="button" x-on:click="checkSummaryFilter = 'error'" :class="checkSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Errors</button>
-				<button type="button" x-on:click="checkSummaryFilter = 'matched'" :class="checkSummaryFilter === 'matched' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Matched</button>
-				<button type="button" x-on:click="checkSummaryFilter = 'skipped'" :class="checkSummaryFilter === 'skipped' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Skipped</button>
+				<button type="button" x-on:click="setCheckSummaryFilter('all')" :class="checkSummaryFilter === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">All</button>
+				<button type="button" x-on:click="setCheckSummaryFilter('issues')" :class="checkSummaryFilter === 'issues' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Issues</button>
+				<button type="button" x-on:click="setCheckSummaryFilter('changed')" :class="checkSummaryFilter === 'changed' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Changed</button>
+				<button type="button" x-on:click="setCheckSummaryFilter('error')" :class="checkSummaryFilter === 'error' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Errors</button>
+				<button type="button" x-on:click="setCheckSummaryFilter('matched')" :class="checkSummaryFilter === 'matched' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Matched</button>
+				<button type="button" x-on:click="setCheckSummaryFilter('skipped')" :class="checkSummaryFilter === 'skipped' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-xs font-semibold transition">Skipped</button>
 			</div>
-			<p class="text-sm font-medium text-slate-600">{ len(data.CheckSummaryRows) } row(s)</p>
+			<p class="text-sm font-medium text-slate-600"><span x-text="checkSummaryCount">{ len(data.CheckSummaryRows) }</span> row(s)</p>
 		</div>
 	</div>
 }
@@ -122,56 +122,90 @@ templ CheckRunSummaryTable(data PageData) {
 	if len(data.CheckSummaryRows) == 0 {
 		<div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No verification summary yet.</div>
 	} else {
-		<div class="overflow-x-auto rounded-2xl border border-slate-200">
-			<table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-				<thead class="bg-slate-50">
-					<tr class="text-xs font-semibold uppercase text-slate-500">
-						<th class="px-3 py-2">Check</th>
-						<th class="px-3 py-2">Rule</th>
-						<th class="px-3 py-2">Type</th>
-						<th class="px-3 py-2">Status</th>
-						<th class="px-3 py-2">Current file</th>
-						<th class="px-3 py-2">Compare file</th>
-						<th class="px-3 py-2">Sheet</th>
-						<th class="px-3 py-2">Detail</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-slate-100">
-					for _, row := range data.CheckSummaryRows {
-						<tr x-show={ summaryVisibilityExpression(row.Status, "checkSummaryFilter") } class="align-top">
-							<td class="whitespace-nowrap px-3 py-2 font-mono text-xs font-semibold text-slate-700">
-								if row.CheckID != "" {
-									{ row.CheckID }
-								} else {
-									{ row.CheckIndex }
-								}
-							</td>
-							<td class="whitespace-nowrap px-3 py-2">
-								<div class="font-mono text-xs font-semibold text-slate-700">
-									if row.RuleID != "" {
-										{ row.RuleID }
-									} else {
-										-
-									}
-								</div>
-								if row.RuleName != "" {
-									<div class="mt-1 max-w-[12rem] truncate text-xs text-slate-500" title={ row.RuleName }>{ row.RuleName }</div>
-								}
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{ row.RuleType }</td>
-							<td class="whitespace-nowrap px-3 py-2">
-								<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
-							</td>
-							<td class="px-3 py-2">@FilePathLink(row.CurrentFile)</td>
-							<td class="px-3 py-2">@FilePathLink(row.CompareFile)</td>
-							<td class="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{ row.Sheet }</td>
-							<td class="min-w-[16rem] px-3 py-2 text-slate-700">{ row.Detail }</td>
+		<div class="space-y-3">
+			<div class="overflow-x-auto rounded-2xl border border-slate-200">
+				<table data-resizable-table data-resizable-key="check-summary" class="min-w-[118rem] table-fixed divide-y divide-slate-200 text-left text-sm">
+					<colgroup>
+						<col data-resizable-column="check" style="width: 8rem"/>
+						<col data-resizable-column="rule" style="width: 13rem"/>
+						<col data-resizable-column="type" style="width: 10rem"/>
+						<col data-resizable-column="status" style="width: 9rem"/>
+						<col data-resizable-column="current-file" style="width: 22rem"/>
+						<col data-resizable-column="compare-file" style="width: 22rem"/>
+						<col data-resizable-column="sheet" style="width: 10rem"/>
+						<col data-resizable-column="detail" style="width: 24rem"/>
+					</colgroup>
+					<thead class="bg-slate-50">
+						<tr class="text-xs font-semibold uppercase text-slate-500">
+							@SummaryResizableHeader("check", "Check", 96)
+							@SummaryResizableHeader("rule", "Rule", 120)
+							@SummaryResizableHeader("type", "Type", 96)
+							@SummaryResizableHeader("status", "Status", 96)
+							@SummaryResizableHeader("current-file", "Current file", 160)
+							@SummaryResizableHeader("compare-file", "Compare file", 160)
+							@SummaryResizableHeader("sheet", "Sheet", 96)
+							@SummaryResizableHeader("detail", "Detail", 160)
 						</tr>
-					}
-				</tbody>
-			</table>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, row := range data.CheckSummaryRows {
+							<tr x-show="checkSummaryRowVisible($el)" data-check-summary-row data-summary-status={ row.Status } class="align-top">
+								<td class="whitespace-nowrap px-3 py-2 font-mono text-xs font-semibold text-slate-700">
+									if row.CheckID != "" {
+										{ row.CheckID }
+									} else {
+										{ row.CheckIndex }
+									}
+								</td>
+								<td class="whitespace-nowrap px-3 py-2">
+									<div class="truncate font-mono text-xs font-semibold text-slate-700">
+										if row.RuleID != "" {
+											{ row.RuleID }
+										} else {
+											-
+										}
+									</div>
+									if row.RuleName != "" {
+										<div class="mt-1 truncate text-xs text-slate-500" title={ row.RuleName }>{ row.RuleName }</div>
+									}
+								</td>
+								<td class="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{ row.RuleType }</td>
+								<td class="whitespace-nowrap px-3 py-2">
+									<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
+								</td>
+								<td class="px-3 py-2">@FilePathLink(row.CurrentFile)</td>
+								<td class="px-3 py-2">@FilePathLink(row.CompareFile)</td>
+								<td class="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{ row.Sheet }</td>
+								<td class="break-words px-3 py-2 text-slate-700">{ row.Detail }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			@CheckSummaryPaginationControls()
 		</div>
 	}
+}
+
+templ CheckSummaryPaginationControls() {
+	<div x-cloak x-show="checkSummaryCount > checkSummaryPageSize" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+		<p class="text-sm font-medium text-slate-600">
+			Showing <span class="font-semibold text-slate-900" x-text="checkSummaryPageStart"></span>-<span class="font-semibold text-slate-900" x-text="checkSummaryPageEnd"></span> of <span class="font-semibold text-slate-900" x-text="checkSummaryCount"></span>
+		</p>
+		<div class="flex items-center gap-2">
+			<button type="button" x-on:click="goToCheckSummaryPage(checkSummaryPage - 1)" x-bind:disabled="checkSummaryPage <= 1" aria-label="Previous summary page" title="Previous summary page" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40">
+				<span aria-hidden="true" class="inline-flex rotate-180">
+					@ChevronRightIcon()
+				</span>
+			</button>
+			<span class="min-w-[6.5rem] text-center text-sm font-semibold text-slate-700">
+				Page <span x-text="checkSummaryPage"></span> of <span x-text="checkSummaryPageCount"></span>
+			</span>
+			<button type="button" x-on:click="goToCheckSummaryPage(checkSummaryPage + 1)" x-bind:disabled="checkSummaryPage >= checkSummaryPageCount" aria-label="Next summary page" title="Next summary page" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40">
+				@ChevronRightIcon()
+			</button>
+		</div>
+	</div>
 }
 
 templ CheckProgressPanel(data PageData) {
