@@ -24,6 +24,7 @@ func (a *application) newPageData(
 		ListenAddr:         a.listenAddr,
 		DefinitionsPath:    definitionsPath,
 		WorkbookPath:       workbookPath,
+		ReportsRoot:        a.reportsRoot,
 		ActiveTab:          tabConfiguration,
 		Strategy:           string(defaultTransferMode),
 		ReferenceDate:      defaultReferenceDate(),

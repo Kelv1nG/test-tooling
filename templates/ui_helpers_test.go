@@ -61,41 +61,46 @@ func TestCheckConfigStartsExpanded(t *testing.T) {
 	}
 }
 
-func TestFileLinkHref(t *testing.T) {
+func TestReportOpenHref(t *testing.T) {
 	tests := []struct {
-		name string
-		path string
-		want string
+		name        string
+		path        string
+		reportsRoot string
+		want        string
 	}{
 		{
-			name: "unc network path",
-			path: `\\server\share\monthly report.xlsx`,
-			want: "file://server/share/monthly%20report.xlsx",
+			name:        "unc path under reports root",
+			path:        `\\server\share\reports\monthly\abc.xlsx`,
+			reportsRoot: `\\server\share\reports`,
+			want:        "/reports/open?path=monthly%2Fabc.xlsx",
 		},
 		{
-			name: "windows drive path",
-			path: `Z:\reports\file.xlsx`,
-			want: "file:///Z:/reports/file.xlsx",
+			name:        "windows drive path under reports root",
+			path:        `Z:\reports\monthly\abc.xlsx`,
+			reportsRoot: `z:\reports`,
+			want:        "/reports/open?path=monthly%2Fabc.xlsx",
 		},
 		{
-			name: "posix absolute path",
-			path: "/mnt/share/monthly report.xlsx",
-			want: "file:///mnt/share/monthly%20report.xlsx",
+			name:        "path outside reports root is not linked",
+			path:        `Z:\other\abc.xlsx`,
+			reportsRoot: `Z:\reports`,
+			want:        "",
 		},
 		{
-			name: "relative path is not linked",
-			path: "sample/report.xlsx",
-			want: "",
+			name:        "empty reports root is not linked",
+			path:        `Z:\reports\monthly\abc.xlsx`,
+			reportsRoot: "",
+			want:        "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := fileLinkHref(tt.path); got != tt.want {
-				t.Fatalf("fileLinkHref(%q) = %q, want %q", tt.path, got, tt.want)
+			if got := reportOpenHref(tt.path, tt.reportsRoot); got != tt.want {
+				t.Fatalf("reportOpenHref(%q, %q) = %q, want %q", tt.path, tt.reportsRoot, got, tt.want)
 			}
-			if got := string(safeFileLinkHref(tt.path)); got != tt.want {
-				t.Fatalf("safeFileLinkHref(%q) = %q, want %q", tt.path, got, tt.want)
+			if got := string(safeReportOpenHref(tt.path, tt.reportsRoot)); got != tt.want {
+				t.Fatalf("safeReportOpenHref(%q, %q) = %q, want %q", tt.path, tt.reportsRoot, got, tt.want)
 			}
 		})
 	}

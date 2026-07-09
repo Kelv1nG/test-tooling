@@ -331,8 +331,8 @@ templ TransferRunSummaryTable(data PageData) {
 								<td class="whitespace-nowrap px-3 py-2">
 									<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
 								</td>
-								<td class="px-3 py-2">@FilePathLink(row.Source)</td>
-								<td class="px-3 py-2">@FilePathLink(row.Destination)</td>
+								<td class="px-3 py-2">@FilePathLink(row.Source, data.ReportsRoot)</td>
+								<td class="px-3 py-2">@FilePathLink(row.Destination, data.ReportsRoot)</td>
 								<td class="break-words px-3 py-2 text-slate-700">{ row.Detail }</td>
 							</tr>
 						}

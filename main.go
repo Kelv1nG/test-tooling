@@ -13,12 +13,14 @@ func main() {
 	addr := flag.String("addr", ":8080", "HTTP listen address")
 	definitionsPath := flag.String("definitions", "table-definitions.yaml", "path to table definitions YAML")
 	workbookPath := flag.String("workbook", "configuration-example.xlsx", "path to workbook")
+	reportsRoot := flag.String("reports-root", os.Getenv("REPORTS_ROOT"), "absolute root folder for report downloads")
 	flag.Parse()
 
 	app := NewApplication(
 		*addr,
 		*definitionsPath,
 		*workbookPath,
+		*reportsRoot,
 		log.New(os.Stdout, "", log.LstdFlags),
 	)
 

@@ -4,6 +4,7 @@ type PageData struct {
 	ListenAddr          string
 	DefinitionsPath     string
 	WorkbookPath        string
+	ReportsRoot         string
 	LoadedAt            string
 	ActiveTab           string
 	HasConfig           bool

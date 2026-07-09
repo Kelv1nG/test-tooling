@@ -18,7 +18,7 @@ func mustNewApplication(
 		logger = log.New(io.Discard, "", 0)
 	}
 
-	return NewApplication(listenAddr, definitionsPath, workbookPath, logger)
+	return NewApplication(listenAddr, definitionsPath, workbookPath, "", logger)
 }
 
 func TestWorkflowTabRoutes(t *testing.T) {

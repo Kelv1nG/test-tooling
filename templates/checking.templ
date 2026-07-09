@@ -173,8 +173,8 @@ templ CheckRunSummaryTable(data PageData) {
 								<td class="whitespace-nowrap px-3 py-2">
 									<span class={ transferStatusClasses(row.Badge) }>{ row.Status }</span>
 								</td>
-								<td class="px-3 py-2">@FilePathLink(row.CurrentFile)</td>
-								<td class="px-3 py-2">@FilePathLink(row.CompareFile)</td>
+								<td class="px-3 py-2">@FilePathLink(row.CurrentFile, data.ReportsRoot)</td>
+								<td class="px-3 py-2">@FilePathLink(row.CompareFile, data.ReportsRoot)</td>
 								<td class="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{ row.Sheet }</td>
 								<td class="break-words px-3 py-2 text-slate-700">{ row.Detail }</td>
 							</tr>

@@ -10,6 +10,7 @@ import (
 type application struct {
 	defaultDefinitionsPath string
 	defaultWorkbookPath    string
+	reportsRoot            string
 	listenAddr             string
 	logger                 *log.Logger
 	verificationJobsMu     sync.Mutex
@@ -20,11 +21,13 @@ func NewApplication(
 	listenAddr string,
 	definitionsPath string,
 	workbookPath string,
+	reportsRoot string,
 	logger *log.Logger,
 ) *application {
 	return &application{
 		defaultDefinitionsPath: definitionsPath,
 		defaultWorkbookPath:    workbookPath,
+		reportsRoot:            reportsRoot,
 		listenAddr:             listenAddr,
 		logger:                 logger,
 		verificationJobs:       map[string]*verificationJob{},
@@ -43,6 +46,8 @@ func (a *application) routes() http.Handler {
 	mux.HandleFunc("/save-checks", a.handleSaveChecks)
 	mux.HandleFunc("/verify-checks", a.handleVerifyChecks)
 	mux.HandleFunc("/verify-checks/status", a.handleVerifyChecksStatus)
+	mux.HandleFunc("/reports/open", a.handleReportOpen)
+	mux.HandleFunc("/reports/download", a.handleReportDownload)
 	mux.HandleFunc("/healthz", a.handleHealth)
 
 	return mux

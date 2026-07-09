@@ -499,7 +499,7 @@ func CheckRunSummaryTable(data PageData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = FilePathLink(row.CurrentFile).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = FilePathLink(row.CurrentFile, data.ReportsRoot).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -507,7 +507,7 @@ func CheckRunSummaryTable(data PageData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = FilePathLink(row.CompareFile).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = FilePathLink(row.CompareFile, data.ReportsRoot).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

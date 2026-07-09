@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -260,28 +261,80 @@ func checkRunProgressStyle(
 	return fmt.Sprintf("width: %d%%", checkRunProgressPercent(completed, total))
 }
 
-func fileLinkHref(path string) string {
-	path = strings.TrimSpace(path)
-	if path == "" {
+func reportOpenHref(
+	filePath string,
+	reportsRoot string,
+) string {
+	relativePath, ok := reportRelativePath(filePath, reportsRoot)
+	if !ok {
 		return ""
 	}
 
-	normalized := strings.ReplaceAll(path, `\`, "/")
-	if strings.HasPrefix(normalized, "//") {
-		return "file://" + escapeFileURLPath(strings.TrimLeft(normalized, "/"))
-	}
-	if len(normalized) >= 3 && normalized[1] == ':' && normalized[2] == '/' {
-		return "file:///" + escapeFileURLPath(normalized)
-	}
-	if strings.HasPrefix(normalized, "/") {
-		return "file://" + escapeFileURLPath(normalized)
-	}
-
-	return ""
+	return "/reports/open?path=" + url.QueryEscape(relativePath)
 }
 
-func safeFileLinkHref(path string) templ.SafeURL {
-	return templ.SafeURL(fileLinkHref(path))
+func safeReportOpenHref(
+	filePath string,
+	reportsRoot string,
+) templ.SafeURL {
+	return templ.SafeURL(reportOpenHref(filePath, reportsRoot))
+}
+
+func reportRelativePath(
+	filePath string,
+	reportsRoot string,
+) (string, bool) {
+	root := cleanReportComparablePath(reportsRoot)
+	target := cleanReportComparablePath(filePath)
+	if root == "" || target == "" {
+		return "", false
+	}
+
+	compareRoot := root
+	compareTarget := target
+	if reportPathUsesWindowsRules(root) || reportPathUsesWindowsRules(target) {
+		compareRoot = strings.ToLower(compareRoot)
+		compareTarget = strings.ToLower(compareTarget)
+	}
+
+	if compareTarget == compareRoot {
+		return "", false
+	}
+	if !strings.HasPrefix(compareTarget, compareRoot+"/") {
+		return "", false
+	}
+
+	return target[len(root)+1:], true
+}
+
+func cleanReportComparablePath(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+
+	normalized := strings.ReplaceAll(value, `\`, "/")
+	isUNC := strings.HasPrefix(normalized, "//")
+	cleaned := path.Clean(normalized)
+	if cleaned == "." {
+		return ""
+	}
+	if isUNC && !strings.HasPrefix(cleaned, "//") {
+		cleaned = "/" + cleaned
+	}
+
+	return strings.TrimRight(cleaned, "/")
+}
+
+func reportPathUsesWindowsRules(value string) bool {
+	if strings.HasPrefix(value, "//") {
+		return true
+	}
+	return len(value) >= 2 && value[1] == ':' && isASCIIAlpha(value[0])
+}
+
+func isASCIIAlpha(value byte) bool {
+	return (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z')
 }
 
 func resizeColumnLabel(label string) string {
@@ -298,13 +351,4 @@ func summaryColumnMinWidth(value int) string {
 	}
 
 	return fmt.Sprintf("%d", value)
-}
-
-func escapeFileURLPath(path string) string {
-	parts := strings.Split(path, "/")
-	for index, part := range parts {
-		parts[index] = url.PathEscape(part)
-	}
-
-	return strings.Join(parts, "/")
 }
