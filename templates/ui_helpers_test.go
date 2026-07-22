@@ -85,6 +85,20 @@ func TestTransferRowHelpers(t *testing.T) {
 	}
 }
 
+func TestCheckConfigSearchText(t *testing.T) {
+	text := checkConfigSearchText(CheckRowView{
+		File:                `\\server\share\May Fargo Something File_{yyyy}_{mm}.xlsx`,
+		ResolvedFile:        `\\server\share\May Fargo Something File_2026_05.xlsx`,
+		ResolvedCompareFile: `\\server\share\April Fargo Something File_2026_04.xlsx`,
+	})
+
+	for _, want := range []string{"May Fargo Something File", "April Fargo Something File"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("checkConfigSearchText() = %q, want it to contain %q", text, want)
+		}
+	}
+}
+
 func TestReportOpenHref(t *testing.T) {
 	tests := []struct {
 		name        string

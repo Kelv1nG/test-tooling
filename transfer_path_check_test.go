@@ -18,8 +18,8 @@ func TestHandleTransferPathCheckRefreshesPostedRowsForReferenceDate(t *testing.T
 	}
 
 	form := url.Values{
-		"definitionsPath":  []string{"table-definitions.yaml"},
-		"workbookPath":     []string{"configuration-example.xlsx"},
+		"definitionsPath":  []string{"unused-definitions.yaml"},
+		"workbookPath":     []string{"unused-workbook.xlsx"},
 		"activeTab":        []string{tabFileTransfer},
 		"strategy":         []string{"overwrite"},
 		"referenceDate":    []string{"2026-06-09"},
@@ -34,6 +34,7 @@ func TestHandleTransferPathCheckRefreshesPostedRowsForReferenceDate(t *testing.T
 	)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("HX-Request", "true")
+	request.Header.Set("HX-Target", "file-transfer-panel")
 
 	recorder := httptest.NewRecorder()
 	app := mustNewApplication(
@@ -49,6 +50,12 @@ func TestHandleTransferPathCheckRefreshesPostedRowsForReferenceDate(t *testing.T
 	}
 
 	body := recorder.Body.String()
+	if strings.Contains(body, `id="app-shell"`) {
+		t.Fatal("path refresh unexpectedly rendered the full app shell")
+	}
+	if !strings.Contains(body, `id="file-transfer-panel"`) {
+		t.Fatal("path refresh did not render the file transfer panel")
+	}
 	if !strings.Contains(body, `bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Yes</span>`) {
 		t.Fatalf("expected source existence badge to be Yes; body=%q", body)
 	}

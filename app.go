@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"tooling/templates"
 )
@@ -72,6 +73,21 @@ func (a *application) renderResponse(
 	component := templates.Page(data)
 	if request != nil && request.Header.Get("HX-Request") == "true" {
 		component = templates.AppShell(data)
+		target := request.Header.Get("HX-Target")
+		if retarget := writer.Header().Get("HX-Retarget"); retarget != "" {
+			target = retarget
+		}
+
+		switch strings.TrimPrefix(target, "#") {
+		case "configuration-panel":
+			component = templates.ConfigurationTab(data)
+		case "file-transfer-panel":
+			component = templates.FileTransferTab(data)
+		case "checking-panel":
+			component = templates.CheckingTab(data)
+		case "check-run-progress":
+			component = templates.CheckProgressPanel(data)
+		}
 	}
 
 	if err := component.Render(request.Context(), writer); err != nil {

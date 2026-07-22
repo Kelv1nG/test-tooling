@@ -29,7 +29,7 @@ func ConfigurationTab(data PageData) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section x-cloak x-show=\"activeTab === 'configuration'\" data-tab-panel=\"configuration\" class=\"rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8\"><div class=\"mb-4\"><h2 class=\"text-xl font-semibold text-slate-900\">Load configuration</h2><p class=\"mt-1 text-sm text-slate-600\">Use repo-local paths or absolute paths for both files.</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section id=\"configuration-panel\" x-cloak x-show=\"activeTab === 'configuration'\" data-tab-panel=\"configuration\" class=\"rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8\"><div class=\"mb-4\"><h2 class=\"text-xl font-semibold text-slate-900\">Load configuration</h2><p class=\"mt-1 text-sm text-slate-600\">Use repo-local paths or absolute paths for both files.</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -41,7 +41,7 @@ func ConfigurationTab(data PageData) templ.Component {
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(data.LoadError)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 16, Col: 115}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 17, Col: 115}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -59,7 +59,7 @@ func ConfigurationTab(data PageData) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.DefinitionsPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 31, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 32, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -72,7 +72,7 @@ func ConfigurationTab(data PageData) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.WorkbookPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 35, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 36, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -90,7 +90,7 @@ func ConfigurationTab(data PageData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.TransferCount)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 42, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 43, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -103,7 +103,7 @@ func ConfigurationTab(data PageData) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(data.CheckCount)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 42, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/configuration.templ`, Line: 43, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {

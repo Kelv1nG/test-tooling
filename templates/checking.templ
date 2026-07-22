@@ -2,6 +2,7 @@ package templates
 
 templ CheckingTab(data PageData) {
 	<section
+		id="checking-panel"
 		x-cloak
 		x-show="activeTab === 'checking'"
 		x-data={ checkingTabStateExpression(data.CheckReferenceDate, data.CheckCount, data.CheckPage, len(data.CheckSummaryRows) > 0 && !data.CheckRunRunning) }
@@ -9,6 +10,9 @@ templ CheckingTab(data PageData) {
 		data-check-pagination-root
 		class="rounded-[1.5rem] border border-slate-200/70 bg-white p-6 sm:p-8"
 	>
+		if !data.HasConfig && data.CheckMessage != "" {
+			<div class={ checkMessageClasses(data.CheckHasIssues) }>{ data.CheckMessage }</div>
+		}
 		if data.HasConfig {
 			<div class="mb-4">
 				<h2 class="text-xl font-semibold text-slate-900">Verification</h2>
@@ -18,7 +22,7 @@ templ CheckingTab(data PageData) {
 				method="post"
 				action="/save-checks"
 				hx-post="/save-checks"
-				hx-target="#app-shell"
+				hx-target="#checking-panel"
 				hx-swap="outerHTML"
 				hx-disabled-elt="button[type='submit']"
 				class="space-y-4"
@@ -68,19 +72,23 @@ templ CheckingTab(data PageData) {
 					<div class="htmx-indicator inline-flex items-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">Working...</div>
 				</div>
 				@CheckViewControls(data)
-				<div x-show="checkView === 'checks'" class="space-y-3" data-check-editor>
-					for _, row := range data.CheckRows {
-						@CheckConfigPanel(row, data.CheckHasIssues)
-					}
-					<template data-check-config-template>
-						@CheckConfigPanel(CheckRowView{
-							Index:    len(data.CheckRows) + 1,
-							ExcelRow: 0,
-						}, false)
-					</template>
-				</div>
-				<div x-show="checkView === 'checks'" class="flex justify-center pt-2">
-					<button type="button" onclick="window.addCheckConfigRow(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add row</button>
+				<div x-show="checkView === 'checks'" class="space-y-3">
+					@CheckPaginationControls()
+					<div x-cloak x-show="checkCount === 0" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No check configs match the current search.</div>
+					<div x-show="checkCount > 0" class="space-y-3" data-check-editor>
+						for _, row := range data.CheckRows {
+							@CheckConfigPanel(row, data.CheckHasIssues)
+						}
+						<template data-check-config-template>
+							@CheckConfigPanel(CheckRowView{
+								Index:    len(data.CheckRows) + 1,
+								ExcelRow: 0,
+							}, false)
+						</template>
+					</div>
+					<div class="flex justify-center pt-2">
+						<button type="button" onclick="window.addCheckConfigRow(this)" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:text-slate-900">Add row</button>
+					</div>
 				</div>
 				<div x-show="checkView === 'summary'">
 					@CheckRunSummaryTable(data)
@@ -101,8 +109,12 @@ templ CheckViewControls(data PageData) {
 			<button type="button" x-on:click="checkView = 'checks'" :class="checkView === 'checks' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-sm font-semibold transition">Configured checks</button>
 			<button type="button" x-on:click="checkView = 'summary'" :class="checkView === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'" class="rounded-xl px-3 py-1.5 text-sm font-semibold transition">Summary</button>
 		</div>
-		<div x-show="checkView === 'checks'" class="flex-1">
-			@CheckPaginationControls()
+		<div x-show="checkView === 'checks'" class="flex min-w-[18rem] flex-1 flex-wrap items-center justify-end gap-2">
+			<label class="min-w-[16rem] flex-1 sm:max-w-[24rem]">
+				<span class="sr-only">Search file patterns</span>
+				<input x-model="checkSearchQuery" x-on:input="goToCheckPage(1)" type="search" placeholder="Search file patterns" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-pine focus:ring-4 focus:ring-teal-100"/>
+			</label>
+			<p class="text-sm font-medium text-slate-600"><span x-text="checkCount">{ data.CheckCount }</span> check(s)</p>
 		</div>
 		<div x-show="checkView === 'summary'" class="flex flex-wrap items-center gap-2">
 			<div class="inline-flex flex-wrap rounded-2xl bg-white p-1 ring-1 ring-slate-200">
@@ -214,7 +226,7 @@ templ CheckProgressPanel(data PageData) {
 			id="check-run-progress"
 			hx-get={ checkRunStatusPath(data.CheckRunID) }
 			hx-trigger="load delay:1s"
-			hx-target="#app-shell"
+			hx-target="#check-run-progress"
 			hx-swap="outerHTML"
 			class="mb-4 rounded-[1.5rem] border border-teal-200 bg-teal-50 px-4 py-4"
 		>
@@ -270,7 +282,7 @@ templ CheckPaginationControls() {
 }
 
 templ CheckConfigPanel(row CheckRowView, expandOnIssues bool) {
-	<div x-data={ checkConfigStateExpression(row, expandOnIssues) } x-show="window.checkConfigIndexVisible($el.dataset.checkConfigIndex, checkPage, checkPageSize)" data-check-config data-check-config-index={ row.Index } class="rounded-[1.25rem] border border-slate-200 bg-white p-4 transition hover:border-teal-200">
+	<div x-data={ checkConfigStateExpression(row, expandOnIssues) } x-show="checkConfigVisible($el)" data-check-config data-check-config-index={ row.Index } data-check-search={ checkConfigSearchText(row) } class="rounded-[1.25rem] border border-slate-200 bg-white p-4 transition hover:border-teal-200">
 		<input type="hidden" name="checkExcelRow" value={ row.ExcelRow }/>
 		<input type="hidden" name="checkID" value={ row.ID }/>
 		<div class="flex min-w-0 items-start justify-between gap-3">

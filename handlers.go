@@ -165,12 +165,7 @@ func (a *application) handleTransferPathCheck(
 
 	data := a.pageDataFromRequest(request)
 	data.ActiveTab = tabFileTransfer
-
-	if err := a.populateConfigData(&data); err != nil {
-		data.LoadError = err.Error()
-		a.renderResponse(writer, request, data, http.StatusBadRequest)
-		return
-	}
+	data.HasConfig = true
 
 	referenceDate, err := parseReferenceDate(data.ReferenceDate)
 	if err != nil {
@@ -411,6 +406,7 @@ func (a *application) handleVerifyChecksStatus(
 	if !allowMethod(writer, request, http.MethodGet) {
 		return
 	}
+	writer.Header().Set("Cache-Control", "no-store")
 
 	jobID := request.URL.Query().Get("id")
 	if jobID == "" {
@@ -421,6 +417,7 @@ func (a *application) handleVerifyChecksStatus(
 		data.ActiveTab = tabChecking
 		data.CheckHasIssues = true
 		data.CheckMessage = "Verification run is missing a job ID."
+		retargetVerificationStatus(writer, request)
 		a.renderResponse(writer, request, data, http.StatusBadRequest)
 		return
 	}
@@ -434,11 +431,26 @@ func (a *application) handleVerifyChecksStatus(
 		data.ActiveTab = tabChecking
 		data.CheckHasIssues = true
 		data.CheckMessage = "Verification run was not found. Start verification again."
+		retargetVerificationStatus(writer, request)
 		a.renderResponse(writer, request, data, http.StatusNotFound)
 		return
 	}
 
-	a.renderResponse(writer, request, job.pageData(), http.StatusOK)
+	data := job.progressData()
+	if !data.CheckRunRunning {
+		retargetVerificationStatus(writer, request)
+		data = job.pageData()
+	}
+	a.renderResponse(writer, request, data, http.StatusOK)
+}
+
+func retargetVerificationStatus(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	if request != nil && request.Header.Get("HX-Request") == "true" {
+		writer.Header().Set("HX-Retarget", "#checking-panel")
+	}
 }
 
 func (a *application) handleHealth(

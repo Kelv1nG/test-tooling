@@ -19,7 +19,7 @@ templ Page(data PageData) {
 }
 
 templ AppShell(data PageData) {
-	<div id="app-shell" x-data={ appShellExpression(data.ActiveTab) } class="min-h-screen">
+	<div id="app-shell" x-data={ appShellExpression(data.ActiveTab) } @popstate.window="syncTabFromLocation()" class="min-h-screen">
 		@TabButtons()
 		@ConfigurationTab(data)
 		@FileTransferTab(data)
@@ -59,8 +59,48 @@ templ HeadAssets() {
 
 templ PageScripts() {
 	<script>
+	  window.workflowTabFromPath = (pathname) => {
+	    const normalizedPath = pathname !== "/" ? String(pathname || "").replace(/\/+$/, "") : pathname;
+	    return {
+	      "/configuration": "configuration",
+	      "/file-transfer": "file-transfer",
+	      "/checking": "checking"
+	    }[normalizedPath] || "";
+	  };
+
 	  window.appShell = (initialTab) => ({
-	    activeTab: initialTab || "configuration"
+	    activeTab: initialTab || "configuration",
+	    init() {
+	      this.syncTabFromLocation();
+	    },
+	    syncTabFromLocation() {
+	      const tab = window.workflowTabFromPath(window.location.pathname);
+	      if (tab) {
+	        this.activeTab = tab;
+	      }
+	    },
+	    navigateTab(tab, event) {
+	      if (
+	        event?.defaultPrevented ||
+	        (event?.button != null && event.button !== 0) ||
+	        event?.metaKey ||
+	        event?.ctrlKey ||
+	        event?.shiftKey ||
+	        event?.altKey
+	      ) {
+	        return;
+	      }
+
+	      event?.preventDefault();
+	      this.activeTab = tab;
+
+	      const nextURL = new URL(event?.currentTarget?.href || window.location.href);
+	      const currentLocation = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+	      const nextLocation = `${nextURL.pathname}${nextURL.search}${nextURL.hash}`;
+	      if (nextLocation !== currentLocation) {
+	        window.history.pushState({ activeTab: tab }, "", nextLocation);
+	      }
+	    }
 	  });
 
 	  window.transferTemplatePlaceholderPattern = /\{[^{}]+\}/;
@@ -181,6 +221,34 @@ templ PageScripts() {
 	      .trim();
 	  };
 
+	  window.filteredRowsCaches = {
+	    transfer: new WeakMap(),
+	    check: new WeakMap(),
+	    summary: new WeakMap(),
+	    indexes: new WeakMap()
+	  };
+
+	  window.cachedFilteredRows = (cache, scope, key, resolve) => {
+	    const cached = cache.get(scope);
+	    if (cached?.key === key) {
+	      return cached.rows;
+	    }
+
+	    const rows = resolve();
+	    cache.set(scope, { key, rows });
+	    return rows;
+	  };
+
+	  window.invalidateFilteredRows = (root) => {
+	    if (!root) {
+	      return;
+	    }
+
+	    window.filteredRowsCaches.transfer.delete(root);
+	    window.filteredRowsCaches.check.delete(root);
+	    window.filteredRowsCaches.summary.delete(root);
+	  };
+
 	  window.transferRowSearchText = (row) => {
 	    const configuredText = row?.dataset?.transferSearch || "";
 	    const currentText = Array.from(row?.querySelectorAll("input[name='transferSrc'], input[name='transferDest']") || [])
@@ -214,9 +282,44 @@ templ PageScripts() {
 
 	  window.transferFilteredRows = (root, destExistsFilter, searchQuery) => {
 	    const scope = root || document;
-	    return Array.from(scope.querySelectorAll("[data-transfer-row]")).filter((row) => {
-	      return window.transferRowMatchesDestExists(row, destExistsFilter) &&
-	        window.transferRowMatchesSearch(row, searchQuery);
+	    const key = JSON.stringify([destExistsFilter || "all", searchQuery || ""]);
+	    return window.cachedFilteredRows(window.filteredRowsCaches.transfer, scope, key, () => {
+	      return Array.from(scope.querySelectorAll("[data-transfer-row]")).filter((row) => {
+	        return window.transferRowMatchesDestExists(row, destExistsFilter) &&
+	          window.transferRowMatchesSearch(row, searchQuery);
+	      });
+	    });
+	  };
+
+	  window.checkConfigSearchText = (config) => {
+	    const configuredText = config?.dataset?.checkSearch || "";
+	    const currentText = Array.from(config?.querySelectorAll("input[name='checkFile']") || [])
+	      .map((input) => input.value)
+	      .join(" ");
+	    return `${configuredText} ${currentText}`;
+	  };
+
+	  window.checkConfigMatchesSearch = (config, query) => {
+	    const needle = window.normalizedTransferSearchText(query);
+	    if (!needle) {
+	      return true;
+	    }
+
+	    const haystack = window.normalizedTransferSearchText(window.checkConfigSearchText(config));
+	    if (haystack.includes(needle)) {
+	      return true;
+	    }
+
+	    return needle.split(" ").filter(Boolean).every((term) => haystack.includes(term));
+	  };
+
+	  window.checkFilteredRows = (root, searchQuery) => {
+	    const scope = root || document;
+	    const key = String(searchQuery || "");
+	    return window.cachedFilteredRows(window.filteredRowsCaches.check, scope, key, () => {
+	      return Array.from(scope.querySelectorAll("[data-check-config]")).filter((config) => {
+	        return window.checkConfigMatchesSearch(config, searchQuery);
+	      });
 	    });
 	  };
 
@@ -237,14 +340,22 @@ templ PageScripts() {
 
 	  window.summaryFilteredRows = (root, selector, filter) => {
 	    const scope = root || document;
-	    return Array.from(scope.querySelectorAll(selector)).filter((row) => {
-	      return window.summaryStatusVisible(row.dataset.summaryStatus, filter);
+	    const key = JSON.stringify([selector, filter || "all"]);
+	    return window.cachedFilteredRows(window.filteredRowsCaches.summary, scope, key, () => {
+	      return Array.from(scope.querySelectorAll(selector)).filter((row) => {
+	        return window.summaryStatusVisible(row.dataset.summaryStatus, filter);
+	      });
 	    });
 	  };
 
 	  window.summaryRowVisible = (row, filteredRows, page, pageSize) => {
 	    const rows = Array.isArray(filteredRows) ? filteredRows : [];
-	    const index = rows.indexOf(row);
+	    let indexes = window.filteredRowsCaches.indexes.get(rows);
+	    if (!indexes) {
+	      indexes = new Map(rows.map((item, index) => [item, index]));
+	      window.filteredRowsCaches.indexes.set(rows, indexes);
+	    }
+	    const index = indexes.get(row) ?? -1;
 	    if (index < 0) {
 	      return false;
 	    }
@@ -436,6 +547,7 @@ templ PageScripts() {
 	      return;
 	    }
 
+	    window.invalidateFilteredRows(root);
 	    const state = window.Alpine.$data(root);
 	    if (!state || typeof state.refreshCheckPagination !== "function") {
 	      return;
@@ -459,6 +571,7 @@ templ PageScripts() {
 	      return;
 	    }
 
+	    window.invalidateFilteredRows(root);
 	    const state = window.Alpine.$data(root);
 	    if (!state || typeof state.refreshTransferPagination !== "function") {
 	      return;

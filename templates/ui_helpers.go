@@ -45,11 +45,12 @@ func strategyStateExpression(
 			transferSummaryFilter: "all",
 			transferSummaryPage: 1,
 			transferSummaryPageSize: %d,
+			transferRowsVersion: 0,
 			init() {
 				this.goToTransferPage(this.transferPage);
 				this.goToTransferSummaryPage(this.transferSummaryPage);
 			},
-			get transferFilteredRows() { return window.transferFilteredRows(this.$root, this.transferDestExistsFilter, this.transferSearchQuery); },
+			get transferFilteredRows() { this.transferRowsVersion; return window.transferFilteredRows(this.$root, this.transferDestExistsFilter, this.transferSearchQuery); },
 			get transferCount() { return this.transferFilteredRows.length; },
 			get transferPageCount() { return Math.max(1, Math.ceil(this.transferCount / this.transferPageSize)); },
 			get transferPageStart() { return this.transferCount === 0 ? 0 : ((this.transferPage - 1) * this.transferPageSize) + 1; },
@@ -68,9 +69,11 @@ func strategyStateExpression(
 				this.transferPage = Math.min(Math.max(nextPage, 1), this.transferPageCount);
 			},
 			refreshTransferPagination() {
+				this.transferRowsVersion += 1;
 				this.goToTransferPage(this.transferPage);
 			},
 			transferRowVisible(row) {
+				this.transferRowsVersion;
 				return window.summaryRowVisible(row, this.transferFilteredRows, this.transferPage, this.transferPageSize);
 			},
 			setTransferSummaryFilter(filter) {
@@ -117,6 +120,16 @@ func transferRowSearchText(row TransferRowView) string {
 	return strings.Join(parts, " ")
 }
 
+func checkConfigSearchText(row CheckRowView) string {
+	parts := []string{
+		row.File,
+		row.ResolvedFile,
+		row.ResolvedCompareFile,
+	}
+
+	return strings.Join(parts, " ")
+}
+
 func referenceDateStateExpression(referenceDate string) string {
 	return fmt.Sprintf(`{ referenceDate: %q }`, referenceDate)
 }
@@ -139,16 +152,19 @@ func checkingTabStateExpression(
 		`{
 			referenceDate: %q,
 			checkView: %q,
+			checkSearchQuery: "",
 			checkSummaryFilter: "all",
 			checkSummaryPage: 1,
 			checkSummaryPageSize: %d,
 			checkPage: %d,
 			checkPageSize: %d,
-			checkCount: %d,
+			checkRowsVersion: 0,
 			init() {
 				this.goToCheckPage(this.checkPage);
 				this.goToCheckSummaryPage(this.checkSummaryPage);
 			},
+			get checkFilteredRows() { this.checkRowsVersion; return window.checkFilteredRows(this.$root, this.checkSearchQuery); },
+			get checkCount() { return this.checkFilteredRows.length; },
 			get checkPageCount() { return Math.max(1, Math.ceil(this.checkCount / this.checkPageSize)); },
 			get checkPageStart() { return this.checkCount === 0 ? 0 : ((this.checkPage - 1) * this.checkPageSize) + 1; },
 			get checkPageEnd() { return Math.min(this.checkPage * this.checkPageSize, this.checkCount); },
@@ -161,9 +177,13 @@ func checkingTabStateExpression(
 				const nextPage = Number(page) || 1;
 				this.checkPage = Math.min(Math.max(nextPage, 1), this.checkPageCount);
 			},
-			refreshCheckPagination(editor) {
-				this.checkCount = editor?.querySelectorAll("[data-check-config]").length ?? this.checkCount;
+			refreshCheckPagination() {
+				this.checkRowsVersion += 1;
 				this.goToCheckPage(this.checkPage);
+			},
+			checkConfigVisible(config) {
+				this.checkRowsVersion;
+				return window.summaryRowVisible(config, this.checkFilteredRows, this.checkPage, this.checkPageSize);
 			},
 			setCheckSummaryFilter(filter) {
 				this.checkSummaryFilter = filter;
@@ -182,7 +202,6 @@ func checkingTabStateExpression(
 		summaryRowsPerPage,
 		checkPage,
 		checkRowsPerPage,
-		checkCount,
 	)
 }
 

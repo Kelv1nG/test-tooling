@@ -158,6 +158,19 @@ func (j *verificationJob) pageData() templates.PageData {
 	return data
 }
 
+func (j *verificationJob) progressData() templates.PageData {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+
+	return templates.PageData{
+		CheckRunID:        j.id,
+		CheckRunCompleted: j.completed,
+		CheckRunTotal:     j.total,
+		CheckRunRunning:   !j.done,
+		CheckSummary:      j.summary,
+	}
+}
+
 func (j *verificationJob) isOlderThan(cutoff time.Time) bool {
 	j.mu.Lock()
 	defer j.mu.Unlock()
