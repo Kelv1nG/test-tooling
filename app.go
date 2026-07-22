@@ -52,7 +52,7 @@ func (a *application) routes() http.Handler {
 	mux.HandleFunc("/reports/download", a.handleReportDownload)
 	mux.HandleFunc("/healthz", a.handleHealth)
 
-	return mux
+	return gzipMiddleware(mux)
 }
 
 func (a *application) renderResponse(
